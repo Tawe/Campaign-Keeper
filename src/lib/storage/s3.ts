@@ -98,17 +98,19 @@ function parseDataUrl(dataUrl: string) {
   return { mimeType, extension, buffer };
 }
 
-async function bodyToUint8Array(body: unknown): Promise<Uint8Array> {
+async function bodyToBuffer(body: unknown): Promise<Buffer> {
   if (!body) {
     throw new Error("Image body is empty.");
   }
 
   if (typeof (body as { transformToByteArray?: () => Promise<Uint8Array> }).transformToByteArray === "function") {
-    return (body as { transformToByteArray: () => Promise<Uint8Array> }).transformToByteArray();
+    return Buffer.from(
+      await (body as { transformToByteArray: () => Promise<Uint8Array> }).transformToByteArray()
+    );
   }
 
   if (typeof (body as { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer === "function") {
-    return new Uint8Array(await (body as { arrayBuffer: () => Promise<ArrayBuffer> }).arrayBuffer());
+    return Buffer.from(await (body as { arrayBuffer: () => Promise<ArrayBuffer> }).arrayBuffer());
   }
 
   if (Symbol.asyncIterator in Object(body)) {
@@ -162,7 +164,7 @@ export async function getPortraitObject(path: string) {
   }
 
   return {
-    body: await bodyToUint8Array(response.Body),
+    body: await bodyToBuffer(response.Body),
     contentType: response.ContentType || "application/octet-stream",
     cacheControl: response.CacheControl || "private, max-age=3600",
   };
