@@ -33,14 +33,15 @@ export async function GET(
   if (legacyPortrait?.startsWith("data:")) {
     const [, mimeType = "image/jpeg", body = ""] =
       legacyPortrait.match(/^data:([^;]+);base64,(.+)$/) ?? [];
+    const bytes = Uint8Array.from(Buffer.from(body, "base64"));
 
     return new NextResponse(
-      new Blob([Buffer.from(body, "base64")], { type: mimeType }),
+      new Blob([bytes], { type: mimeType }),
       {
-      headers: {
-        "Content-Type": mimeType,
-        "Cache-Control": "private, max-age=3600",
-      },
+        headers: {
+          "Content-Type": mimeType,
+          "Cache-Control": "private, max-age=3600",
+        },
       }
     );
   }
@@ -52,7 +53,8 @@ export async function GET(
 
   try {
     const portrait = await getPortraitObject(portraitPath);
-    return new NextResponse(new Blob([portrait.body], { type: portrait.contentType }), {
+    const bytes = Uint8Array.from(portrait.body);
+    return new NextResponse(new Blob([bytes], { type: portrait.contentType }), {
       headers: {
         "Content-Type": portrait.contentType,
         "Cache-Control": portrait.cacheControl,
