@@ -36,23 +36,24 @@ Server-side config:
 
 ```env
 FIREBASE_SERVICE_ACCOUNT=
-AWS_REGION=
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-S3_BUCKET=
+CAMPAIGN_KEEPER_AWS_REGION=
+CAMPAIGN_KEEPER_AWS_ACCESS_KEY_ID=
+CAMPAIGN_KEEPER_AWS_SECRET_ACCESS_KEY=
+CAMPAIGN_KEEPER_S3_BUCKET=
 ```
 
 Optional S3 settings:
 
 ```env
-AWS_SESSION_TOKEN=
-S3_ENDPOINT=
-S3_FORCE_PATH_STYLE=false
+CAMPAIGN_KEEPER_AWS_SESSION_TOKEN=
+CAMPAIGN_KEEPER_S3_ENDPOINT=
+CAMPAIGN_KEEPER_S3_FORCE_PATH_STYLE=false
 ```
 
 Notes:
 
 - `FIREBASE_SERVICE_ACCOUNT` should be the full service account JSON compressed into a single line.
+- The app accepts the project-scoped `CAMPAIGN_KEEPER_*` S3 env vars and falls back to standard AWS names locally if needed.
 - Portrait uploads are written server-side to S3 and then served back through app routes, so the bucket should stay private.
 - `DISABLE_AUTH=true` is only honored outside production and is meant for local development only.
 

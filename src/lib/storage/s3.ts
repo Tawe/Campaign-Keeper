@@ -17,6 +17,11 @@ const MAX_PORTRAIT_BYTES = 2 * 1024 * 1024;
 
 let s3Client: S3Client | null = null;
 
+function getEnv(name: string, fallback?: string) {
+  const value = process.env[name] || (fallback ? process.env[fallback] : undefined);
+  return value?.trim() || undefined;
+}
+
 function formatS3Error(error: unknown, action: string) {
   if (error instanceof S3ServiceException) {
     const suffix = error.message ? ` ${error.message}` : "";
@@ -31,9 +36,9 @@ function formatS3Error(error: unknown, action: string) {
 }
 
 function getBucketName() {
-  const bucket = process.env.S3_BUCKET;
+  const bucket = getEnv("CAMPAIGN_KEEPER_S3_BUCKET", "S3_BUCKET");
   if (!bucket) {
-    throw new Error("S3_BUCKET is not configured.");
+    throw new Error("CAMPAIGN_KEEPER_S3_BUCKET is not configured.");
   }
   return bucket;
 }
@@ -41,21 +46,31 @@ function getBucketName() {
 function getS3Client() {
   if (s3Client) return s3Client;
 
-  const region = process.env.AWS_REGION;
+  const region = getEnv("CAMPAIGN_KEEPER_AWS_REGION", "AWS_REGION");
   if (!region) {
-    throw new Error("AWS_REGION is not configured.");
+    throw new Error("CAMPAIGN_KEEPER_AWS_REGION is not configured.");
   }
+
+  const accessKeyId = getEnv("CAMPAIGN_KEEPER_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID");
+  const secretAccessKey = getEnv(
+    "CAMPAIGN_KEEPER_AWS_SECRET_ACCESS_KEY",
+    "AWS_SECRET_ACCESS_KEY"
+  );
+  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN", "AWS_SESSION_TOKEN");
+  const endpoint = getEnv("CAMPAIGN_KEEPER_S3_ENDPOINT", "S3_ENDPOINT");
+  const forcePathStyle =
+    getEnv("CAMPAIGN_KEEPER_S3_FORCE_PATH_STYLE", "S3_FORCE_PATH_STYLE") === "true";
 
   s3Client = new S3Client({
     region,
-    endpoint: process.env.S3_ENDPOINT || undefined,
-    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+    endpoint,
+    forcePathStyle,
     credentials:
-      process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+      accessKeyId && secretAccessKey
         ? {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            sessionToken: process.env.AWS_SESSION_TOKEN || undefined,
+            accessKeyId,
+            secretAccessKey,
+            sessionToken,
           }
         : undefined,
   });
