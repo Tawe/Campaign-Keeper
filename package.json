@@ -29,7 +29,8 @@
     "tailwind-merge": "^3.5.0"
   },
   "overrides": {
-    "strip-ansi": "7.1.0"
+    "strip-ansi": "7.1.0",
+    "minimatch": "9.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
