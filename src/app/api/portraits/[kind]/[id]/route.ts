@@ -11,7 +11,7 @@ const COLLECTIONS = {
 
 export async function GET(
   _request: NextRequest,
-  context: { params: Promise<{ kind: "npc" | "player"; id: string }> }
+  context: { params: Promise<{ kind: string; id: string }> }
 ) {
   const user = await getSessionUser();
   if (!user) {
@@ -19,7 +19,7 @@ export async function GET(
   }
 
   const { kind, id } = await context.params;
-  const collection = COLLECTIONS[kind];
+  const collection = COLLECTIONS[kind as keyof typeof COLLECTIONS];
   if (!collection) {
     return new NextResponse("Not found", { status: 404 });
   }
