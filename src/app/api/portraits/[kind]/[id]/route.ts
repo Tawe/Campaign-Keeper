@@ -34,12 +34,15 @@ export async function GET(
     const [, mimeType = "image/jpeg", body = ""] =
       legacyPortrait.match(/^data:([^;]+);base64,(.+)$/) ?? [];
 
-    return new NextResponse(Buffer.from(body, "base64"), {
+    return new NextResponse(
+      new Blob([Buffer.from(body, "base64")], { type: mimeType }),
+      {
       headers: {
         "Content-Type": mimeType,
         "Cache-Control": "private, max-age=3600",
       },
-    });
+      }
+    );
   }
 
   const portraitPath = doc.data()?.portraitPath as string | undefined;
@@ -49,7 +52,7 @@ export async function GET(
 
   try {
     const portrait = await getPortraitObject(portraitPath);
-    return new NextResponse(portrait.body, {
+    return new NextResponse(new Blob([portrait.body], { type: portrait.contentType }), {
       headers: {
         "Content-Type": portrait.contentType,
         "Cache-Control": portrait.cacheControl,
