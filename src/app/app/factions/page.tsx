@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getGlobalFactionsWithCampaigns } from "@/domains/factions/queries";
+import { deleteFactionPermanently } from "@/domains/factions/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { Badge } from "@/components/ui/badge";
 
 export default async function GlobalFactionsPage() {
@@ -56,6 +58,11 @@ export default async function GlobalFactionsPage() {
                 )}
 
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
+                  <VaultDeleteButton
+                    entityName={faction.name}
+                    description="This will permanently delete this faction from all campaigns and the vault. This cannot be undone."
+                    action={deleteFactionPermanently.bind(null, faction.id)}
+                  />
                   {campaigns.map(({ campaignId, status, influence }) => {
                     const campaign = campaignMap.get(campaignId);
                     if (!campaign) return null;

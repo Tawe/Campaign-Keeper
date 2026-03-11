@@ -14,6 +14,7 @@ import { getEventsForLocation } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { updateLocationInfo } from "@/domains/locations/actions";
 import { LocationImageEditor } from "@/domains/locations/components/LocationImageEditor";
+import { LocationDeleteActions } from "@/domains/locations/components/LocationDeleteActions";
 import { LocationParentSelector } from "@/domains/locations/components/LocationParentSelector";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { InlineEditor } from "@/components/shared/InlineEditor";
@@ -91,6 +92,7 @@ export default async function LocationDetailPage({
         }
         backHref={fromVault ? "/app/locations" : `/campaigns/${campaignId}/locations`}
         backLabel={fromVault ? "Vault" : "Locations"}
+        action={<LocationDeleteActions locationId={locationId} campaignId={campaignId} fromVault={fromVault} />}
       />
 
       {/* Breadcrumb path */}

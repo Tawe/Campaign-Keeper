@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { adminDb } from "@/lib/firebase/admin";
 import { toCampaign, toSession } from "@/lib/firebase/converters";
 import {
@@ -13,7 +14,14 @@ export async function getCampaign(campaignId: string, userId: string): Promise<C
   const db = adminDb();
   const doc = await db.collection(CAMPAIGNS_COL).doc(campaignId).get();
   if (!doc.exists || doc.data()?.userId !== userId) return null;
-  return toCampaign(doc);
+  const campaign = toCampaign(doc);
+  // Lazy migration: generate inviteToken for campaigns created before the field existed
+  if (!campaign.invite_token) {
+    const token = randomUUID();
+    await db.collection(CAMPAIGNS_COL).doc(campaignId).update({ inviteToken: token });
+    return { ...campaign, invite_token: token };
+  }
+  return campaign;
 }
 
 export async function getCampaignPublic(campaignId: string): Promise<Campaign | null> {

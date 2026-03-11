@@ -5,6 +5,7 @@ import { getFactionWithCampaignData, getNpcsInFaction } from "@/domains/factions
 import { getEventsForFaction } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { updateFactionInfo } from "@/domains/factions/actions";
+import { FactionDeleteActions } from "@/domains/factions/components/FactionDeleteActions";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { InlineEditor } from "@/components/shared/InlineEditor";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
@@ -40,6 +41,7 @@ export default async function FactionDetailPage({
         eyebrow="Faction"
         backHref={fromVault ? "/app/factions" : `/campaigns/${campaignId}/factions`}
         backLabel={fromVault ? "Vault" : "Factions"}
+        action={<FactionDeleteActions factionId={factionId} campaignId={campaignId} fromVault={fromVault} />}
       />
 
       {/* Meta badges */}

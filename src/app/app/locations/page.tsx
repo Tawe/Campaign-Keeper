@@ -2,8 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getGlobalLocationsWithCampaigns } from "@/domains/locations/queries";
+import { deleteLocationPermanently } from "@/domains/locations/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { Badge } from "@/components/ui/badge";
 
 export default async function GlobalLocationsPage() {
@@ -48,7 +50,12 @@ export default async function GlobalLocationsPage() {
                     <p className="font-medium text-foreground truncate">{loc.name}</p>
                   </div>
                 )}
-                <div className="flex flex-wrap gap-1.5 justify-end shrink-0">
+                <div className="flex flex-wrap gap-1.5 justify-end shrink-0 items-center">
+                  <VaultDeleteButton
+                    entityName={loc.name}
+                    description="This will permanently delete this location from all campaigns and the vault. Sub-locations will have their parent cleared. This cannot be undone."
+                    action={deleteLocationPermanently.bind(null, loc.id)}
+                  />
                   {campaigns.map(({ campaignId }) => {
                     const campaign = campaignMap.get(campaignId);
                     if (!campaign) return null;

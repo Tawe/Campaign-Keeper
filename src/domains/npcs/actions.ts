@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
-import { CAMPAIGN_NPCS_COL, NPCS_COL } from "@/lib/firebase/db";
-import { handlePortraitUpdate } from "@/lib/storage/s3";
+import { CAMPAIGN_NPCS_COL, NPC_MENTIONS_COL, NPCS_COL } from "@/lib/firebase/db";
+import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
   MAX_NAME_LENGTH,
@@ -221,4 +221,49 @@ export async function updateNpcInfo(
 
   revalidatePath(`/campaigns/${campaignId}/npcs/${npcId}`);
   revalidatePath(`/campaigns/${campaignId}/npcs`);
+}
+
+export async function removeNpcFromCampaign(npcId: string, campaignId: string) {
+  const { user } = await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const linkRef = db.collection(CAMPAIGN_NPCS_COL).doc(`${campaignId}_${npcId}`);
+  let linkDoc = await linkRef.get();
+  if (!linkDoc.exists) {
+    const snap = await db
+      .collection(CAMPAIGN_NPCS_COL)
+      .where("campaignId", "==", campaignId)
+      .where("npcId", "==", npcId)
+      .where("userId", "==", user.uid)
+      .limit(1)
+      .get();
+    if (snap.empty) throw new Error("NPC is not linked to this campaign.");
+    linkDoc = snap.docs[0];
+  }
+  if (linkDoc.data()?.campaignId !== campaignId) throw new Error("Campaign mismatch.");
+  await linkDoc.ref.delete();
+
+  revalidatePath(`/campaigns/${campaignId}/npcs`);
+  revalidatePath(`/app/npcs`);
+}
+
+export async function deleteNpcPermanently(npcId: string) {
+  const { doc } = await requireOwnedDoc("npc", npcId);
+  const portraitPath = (doc.data()?.portraitPath as string | null) ?? null;
+
+  const db = adminDb();
+  const batch = db.batch();
+
+  batch.delete(db.collection(NPCS_COL).doc(npcId));
+
+  const campaignLinks = await db.collection(CAMPAIGN_NPCS_COL).where("npcId", "==", npcId).get();
+  campaignLinks.docs.forEach((d) => batch.delete(d.ref));
+
+  const mentions = await db.collection(NPC_MENTIONS_COL).where("npcId", "==", npcId).get();
+  mentions.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+  await deletePortrait(portraitPath);
+
+  revalidatePath(`/app/npcs`);
 }

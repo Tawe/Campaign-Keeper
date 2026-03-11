@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
-import { requireOwnedCampaign, requireUser } from "@/lib/auth/actions";
+import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_FACTIONS_COL, FACTIONS_COL } from "@/lib/firebase/db";
 import {
   assertMaxLength,
@@ -195,4 +195,44 @@ export async function updateFactionInfo(
 
   revalidatePath(`/campaigns/${campaignId}/factions/${factionId}`);
   revalidatePath(`/campaigns/${campaignId}/factions`);
+}
+
+export async function removeFactionFromCampaign(factionId: string, campaignId: string) {
+  const { user } = await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const linkRef = db.collection(CAMPAIGN_FACTIONS_COL).doc(`${campaignId}_${factionId}`);
+  let linkDoc = await linkRef.get();
+  if (!linkDoc.exists) {
+    const snap = await db
+      .collection(CAMPAIGN_FACTIONS_COL)
+      .where("campaignId", "==", campaignId)
+      .where("factionId", "==", factionId)
+      .where("userId", "==", user.uid)
+      .limit(1)
+      .get();
+    if (snap.empty) throw new Error("Faction is not linked to this campaign.");
+    linkDoc = snap.docs[0];
+  }
+  if (linkDoc.data()?.campaignId !== campaignId) throw new Error("Campaign mismatch.");
+  await linkDoc.ref.delete();
+
+  revalidatePath(`/campaigns/${campaignId}/factions`);
+  revalidatePath(`/app/factions`);
+}
+
+export async function deleteFactionPermanently(factionId: string) {
+  await requireOwnedDoc("faction", factionId);
+
+  const db = adminDb();
+  const batch = db.batch();
+
+  batch.delete(db.collection(FACTIONS_COL).doc(factionId));
+
+  const campaignLinks = await db.collection(CAMPAIGN_FACTIONS_COL).where("factionId", "==", factionId).get();
+  campaignLinks.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+
+  revalidatePath(`/app/factions`);
 }

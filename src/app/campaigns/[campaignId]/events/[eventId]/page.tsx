@@ -9,6 +9,7 @@ import { getCampaignPlayers } from "@/domains/players/queries";
 import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignCalendar } from "@/domains/calendars/queries";
 import { updateEventField } from "@/domains/events/actions";
+import { EventDeleteActions } from "@/domains/events/components/EventDeleteActions";
 import { EventAssociationsEditor } from "@/domains/events/components/EventAssociationsEditor";
 import { EventDateEditor } from "@/domains/events/components/EventDateEditor";
 import { EventImageEditor } from "@/domains/events/components/EventImageEditor";
@@ -73,6 +74,7 @@ export default async function EventDetailPage({
         eyebrow="Event"
         backHref={`/campaigns/${campaignId}/events`}
         backLabel="Events"
+        action={<EventDeleteActions eventId={eventId} campaignId={campaignId} />}
       />
 
       {/* Meta badges */}

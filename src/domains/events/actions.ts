@@ -5,7 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_EVENTS_COL, EVENTS_COL } from "@/lib/firebase/db";
-import { handlePortraitUpdate } from "@/lib/storage/s3";
+import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
   assertMaxItems,
@@ -232,4 +232,28 @@ export async function updateEventImage(
 
   revalidatePath(`/campaigns/${campaignId}/events/${eventId}`);
   revalidatePath(`/campaigns/${campaignId}/events`);
+}
+
+export async function deleteEvent(eventId: string, campaignId: string) {
+  const user = await requireUser();
+  await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const globalDoc = await db.collection(EVENTS_COL).doc(eventId).get();
+  if (!globalDoc.exists || globalDoc.data()?.userId !== user.uid) {
+    throw new Error("Event not found.");
+  }
+  const imagePath = (globalDoc.data()?.imagePath as string | null) ?? null;
+
+  const batch = db.batch();
+  batch.delete(db.collection(EVENTS_COL).doc(eventId));
+
+  const campaignLinks = await db.collection(CAMPAIGN_EVENTS_COL).where("eventId", "==", eventId).get();
+  campaignLinks.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+  await deletePortrait(imagePath);
+
+  revalidatePath(`/campaigns/${campaignId}/events`);
+  revalidatePath(`/campaigns/${campaignId}/calendar`);
 }

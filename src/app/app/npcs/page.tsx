@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getGlobalNpcsWithCampaigns } from "@/domains/npcs/queries";
+import { deleteNpcPermanently } from "@/domains/npcs/actions";
 import { Portrait } from "@/components/shared/Portrait";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { Badge } from "@/components/ui/badge";
 
 const dispositionColors: Record<string, string> = {
@@ -60,6 +62,11 @@ export default async function GlobalNpcsPage() {
                 )}
 
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
+                  <VaultDeleteButton
+                    entityName={npc.name}
+                    description="This will permanently delete this NPC from all campaigns and the vault. This cannot be undone."
+                    action={deleteNpcPermanently.bind(null, npc.id)}
+                  />
                   {campaigns.map(({ campaignId, status, disposition }) => {
                     const campaign = campaignMap.get(campaignId);
                     if (!campaign) return null;

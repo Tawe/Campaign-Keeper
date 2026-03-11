@@ -6,6 +6,7 @@ import { getNpcWithCampaignData, getNpcMentionHistory } from "@/domains/npcs/que
 import { getEventsForNpc } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { NpcProfileEditor } from "@/domains/npcs/components/NpcProfileEditor";
+import { NpcDeleteActions } from "@/domains/npcs/components/NpcDeleteActions";
 import { updateNpcInfo } from "@/domains/npcs/actions";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
 import { NpcClassEditor } from "@/domains/npcs/components/NpcClassEditor";
@@ -64,6 +65,7 @@ export default async function NpcDetailPage({
         eyebrow="NPC Record"
         backHref={fromVault ? "/app/npcs" : `/campaigns/${campaignId}/npcs`}
         backLabel={fromVault ? "Vault" : "NPCs"}
+        action={<NpcDeleteActions npcId={npcId} campaignId={campaignId} fromVault={fromVault} />}
       />
 
       <div className="paper-panel space-y-5 px-5 py-5 sm:px-6">

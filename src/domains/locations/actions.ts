@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
-import { requireOwnedCampaign, requireUser } from "@/lib/auth/actions";
-import { CAMPAIGN_LOCATIONS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
-import { handlePortraitUpdate } from "@/lib/storage/s3";
+import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
+import { CAMPAIGN_LOCATIONS_COL, LOCATION_VISITS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
+import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
   MAX_NAME_LENGTH,
@@ -186,4 +186,53 @@ export async function updateLocationParent(
   await batch.commit();
 
   revalidatePath(`/campaigns/${campaignId}/locations/${locationId}`);
+}
+
+export async function removeLocationFromCampaign(locationId: string, campaignId: string) {
+  const { user } = await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const linkRef = db.collection(CAMPAIGN_LOCATIONS_COL).doc(`${campaignId}_${locationId}`);
+  let linkDoc = await linkRef.get();
+  if (!linkDoc.exists) {
+    const snap = await db
+      .collection(CAMPAIGN_LOCATIONS_COL)
+      .where("campaignId", "==", campaignId)
+      .where("locationId", "==", locationId)
+      .where("userId", "==", user.uid)
+      .limit(1)
+      .get();
+    if (snap.empty) throw new Error("Location is not linked to this campaign.");
+    linkDoc = snap.docs[0];
+  }
+  if (linkDoc.data()?.campaignId !== campaignId) throw new Error("Campaign mismatch.");
+  await linkDoc.ref.delete();
+
+  revalidatePath(`/campaigns/${campaignId}/locations`);
+  revalidatePath(`/app/locations`);
+}
+
+export async function deleteLocationPermanently(locationId: string) {
+  const { doc } = await requireOwnedDoc("location", locationId);
+  const imagePath = (doc.data()?.imagePath as string | null) ?? null;
+
+  const db = adminDb();
+  const batch = db.batch();
+
+  batch.delete(db.collection(LOCATIONS_COL).doc(locationId));
+
+  const campaignLinks = await db.collection(CAMPAIGN_LOCATIONS_COL).where("locationId", "==", locationId).get();
+  campaignLinks.docs.forEach((d) => batch.delete(d.ref));
+
+  const visits = await db.collection(LOCATION_VISITS_COL).where("locationId", "==", locationId).get();
+  visits.docs.forEach((d) => batch.delete(d.ref));
+
+  // Orphan sublocations — clear their parentLocationId
+  const sublocLinks = await db.collection(CAMPAIGN_LOCATIONS_COL).where("parentLocationId", "==", locationId).get();
+  sublocLinks.docs.forEach((d) => batch.update(d.ref, { parentLocationId: null }));
+
+  await batch.commit();
+  await deletePortrait(imagePath);
+
+  revalidatePath(`/app/locations`);
 }

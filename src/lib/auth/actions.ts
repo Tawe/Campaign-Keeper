@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { adminDb } from "@/lib/firebase/admin";
 import {
   CAMPAIGNS_COL,
+  EVENTS_COL,
   FACTIONS_COL,
   LOCATIONS_COL,
   NPCS_COL,
@@ -21,6 +22,7 @@ const OWNED_COLLECTIONS = {
   npc: NPCS_COL,
   location: LOCATIONS_COL,
   faction: FACTIONS_COL,
+  event: EVENTS_COL,
 } as const;
 
 type OwnedCollectionKey = keyof typeof OWNED_COLLECTIONS;
