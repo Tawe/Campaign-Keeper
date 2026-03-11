@@ -1,0 +1,43 @@
+flowchart LR
+  subgraph Client
+    Browser["Browser"]
+    Forms["Forms / Client components"]
+  end
+
+  subgraph NextJS["Next.js"]
+    MW["Middleware\nProtects /campaigns, /app, /player\nLeaves /join public"]
+    SC["Server Components\n(getSessionUser, adminDb)"]
+    SA["Server Actions\n(requireUser, requireOwnedCampaign,\njoinCampaign, etc.)"]
+    API["API routes\n(POST/DELETE /api/session)"]
+  end
+
+  subgraph Firebase
+    Auth["Firebase Auth\n(magic link, idToken)"]
+    Firestore["Firestore\n(Admin SDK)"]
+  end
+
+  subgraph Session
+    Cookie["Session cookie\n(verified server-side)"]
+  end
+
+  subgraph AccessControl["Access Control"]
+    DMCheck["DM: userId == user.uid"]
+    PlayerCheck["Player: uid in campaign.playerUserIds\n(isPlayerInCampaign rule)"]
+  end
+
+  Browser --> MW
+  MW -->|"Has cookie"| SC
+  MW -->|"No cookie + protected"| Browser
+  Browser --> Forms
+  Forms --> SA
+  SC --> Cookie
+  SA --> Cookie
+  API --> Auth
+  API --> Cookie
+  SC --> Firestore
+  SA --> Firestore
+  Auth --> API
+  Cookie --> SC
+  Cookie --> SA
+  Firestore --> DMCheck
+  Firestore --> PlayerCheck

@@ -1,10 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink, Pencil } from "lucide-react";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toPlayer } from "@/lib/firebase/converters";
-import { PLAYERS_COL, SESSIONS_COL } from "@/lib/firebase/db";
+import { getPlayerWithSessions } from "@/domains/players/queries";
 import { Portrait } from "@/components/shared/Portrait";
 import { MetaStrip, SectionFrame, StackedList } from "@/components/shared/editorial";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -18,47 +16,12 @@ export default async function PlayerDetailPage({
 }) {
   const { campaignId, playerId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
+  const data = await getPlayerWithSessions(playerId, campaignId, user.uid);
+  if (!data) notFound();
 
-  const [playerDoc, sessionsSnap] = await Promise.all([
-    db.collection(PLAYERS_COL).doc(playerId).get(),
-    db.collection(SESSIONS_COL).where("campaignId", "==", campaignId).orderBy("date", "desc").get(),
-  ]);
-
-  if (!playerDoc.exists || playerDoc.data()?.userId !== user.uid) notFound();
-  const player = toPlayer(playerDoc);
-  if (player.campaign_id !== campaignId) notFound();
-
-  // Build per-character session list from session docs
-  const sessions = sessionsSnap.docs.map((doc) => ({
-    id: doc.id,
-    date: doc.data().date as string,
-    title: (doc.data().title ?? null) as string | null,
-    characters: (doc.data().characters ?? []) as { name: string; statusAtEnd: string }[],
-  }));
-
-  const charSessionMap = new Map<
-    string,
-    { id: string; date: string; title: string | null; statusAtEnd: string }[]
-  >();
-  for (const char of player.characters) {
-    charSessionMap.set(char.name.toLowerCase(), []);
-  }
-  for (const session of sessions) {
-    for (const sc of session.characters) {
-      const key = sc.name.toLowerCase();
-      if (charSessionMap.has(key)) {
-        charSessionMap.get(key)!.push({
-          id: session.id,
-          date: session.date,
-          title: session.title,
-          statusAtEnd: sc.statusAtEnd,
-        });
-      }
-    }
-  }
+  const { player, charSessionMap } = data;
 
   return (
     <div className="reading-shell space-y-6">

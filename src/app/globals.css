@@ -58,6 +58,15 @@
 
 :root {
   --radius: 1rem;
+  /* Design system visual tokens — light mode */
+  --ds-bg-main: oklch(0.974 0.011 84.6);
+  --ds-bg-elevated: oklch(0.992 0.007 86.2);
+  --ds-bg-soft: oklch(0.963 0.013 82.1);
+  --ds-border-soft: rgba(0, 0, 0, 0.06);
+  --ds-text-primary: oklch(0.238 0.025 39.8);
+  --ds-text-secondary: oklch(0.518 0.026 47.9);
+  --ds-accent: oklch(0.405 0.061 164.7);
+  --ds-accent-soft: oklch(0.405 0.061 164.7 / 0.12);
   --background: oklch(0.974 0.011 84.6);
   --foreground: oklch(0.238 0.025 39.8);
   --card: oklch(0.992 0.007 86.2);
@@ -141,6 +150,39 @@
   --sidebar-accent-foreground: oklch(0.948 0.008 87.9);
   --sidebar-border: oklch(0.36 0.014 41.1);
   --sidebar-ring: oklch(0.675 0.068 164.1);
+
+  /* Campaign Tracker visual tokens: ink, slate, candlelight */
+  --ds-bg-main: #0b1020;
+  --ds-bg-elevated: #12192b;
+  --ds-bg-soft: #182033;
+  --ds-border-soft: rgba(255, 255, 255, 0.08);
+  --ds-text-primary: #f3f0e8;
+  --ds-text-secondary: #b7b3a8;
+  --ds-accent: #d4a95a;
+  --ds-accent-soft: rgba(212, 169, 90, 0.18);
+
+  /* Bridge shadcn tokens to new direction */
+  --background: #0b1020;
+  --foreground: #f3f0e8;
+  --card: #12192b;
+  --card-foreground: #f3f0e8;
+  --panel: #12192b;
+  --panel-foreground: #f3f0e8;
+  --paper: #182033;
+  --paper-foreground: #f3f0e8;
+  --popover: #12192b;
+  --popover-foreground: #f3f0e8;
+  --primary: #d4a95a;
+  --primary-foreground: #0b1020;
+  --secondary: #182033;
+  --secondary-foreground: #f3f0e8;
+  --muted: #12192b;
+  --muted-foreground: #b7b3a8;
+  --accent: #182033;
+  --accent-foreground: #f3f0e8;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: rgba(212, 169, 90, 0.32);
 }
 
 @layer base {
@@ -153,9 +195,9 @@
   body {
     @apply bg-background text-foreground min-h-screen;
     background-image:
-      radial-gradient(circle at top, color-mix(in oklch, var(--accent) 22%, transparent) 0%, transparent 34%),
-      radial-gradient(circle at 85% 15%, color-mix(in oklch, var(--primary) 14%, transparent) 0%, transparent 24%),
-      linear-gradient(180deg, color-mix(in oklch, var(--paper) 80%, transparent), transparent 24rem);
+      radial-gradient(circle at top, color-mix(in srgb, var(--ds-accent-soft) 55%, transparent) 0%, transparent 30%),
+      radial-gradient(circle at 80% 16%, color-mix(in srgb, var(--ds-accent-soft) 36%, transparent) 0%, transparent 22%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ds-bg-soft) 78%, transparent), transparent 24rem);
   }
   ::selection {
     background: color-mix(in oklch, var(--primary) 24%, white);
@@ -163,6 +205,59 @@
 }
 
 @layer components {
+  /* Design system tokens */
+  .ds-bg-main {
+    background-color: var(--ds-bg-main);
+  }
+
+  .ds-bg-panel {
+    background-color: color-mix(in srgb, var(--ds-bg-elevated) 72%, transparent);
+  }
+
+  .ds-bg-hover {
+    background-color: color-mix(in srgb, var(--ds-bg-soft) 76%, transparent);
+  }
+
+  .ds-text-primary {
+    color: var(--ds-text-primary);
+  }
+
+  .ds-text-secondary {
+    color: var(--ds-text-secondary);
+  }
+
+  .ds-accent {
+    color: var(--ds-accent);
+  }
+
+  .ds-page-title {
+    @apply text-2xl font-semibold;
+    color: var(--ds-text-primary);
+  }
+
+  .ds-section-header {
+    @apply text-sm uppercase tracking-wide;
+    color: var(--ds-text-secondary);
+  }
+
+  .ds-body {
+    @apply text-sm;
+    color: var(--ds-text-secondary);
+  }
+
+  .ds-panel {
+    @apply rounded-lg;
+    background-color: color-mix(in srgb, var(--ds-bg-elevated) 72%, transparent);
+  }
+
+  .ds-interactive {
+    @apply rounded-md transition;
+  }
+  .ds-interactive:hover {
+    background-color: color-mix(in srgb, var(--ds-bg-soft) 78%, transparent);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px color-mix(in srgb, var(--ds-accent-soft) 40%, transparent);
+  }
+
   .page-shell {
     @apply mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8;
   }
@@ -173,23 +268,30 @@
 
   .ink-title {
     font-family: var(--font-fraunces), serif;
-    @apply text-balance tracking-[-0.02em] text-3xl font-semibold text-foreground sm:text-4xl;
+    @apply text-balance text-2xl font-semibold tracking-[-0.02em] sm:text-4xl;
+    color: var(--ds-text-primary);
   }
 
   .section-eyebrow {
-    @apply text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground;
+    @apply text-sm uppercase tracking-wide;
+    color: var(--ds-text-secondary);
   }
 
   .paper-panel {
-    @apply rounded-3xl border border-border/80 bg-card text-card-foreground shadow-[0_1px_0_rgba(0,0,0,0.03),0_12px_40px_rgba(80,61,34,0.06)];
+    @apply rounded-lg;
+    background-color: color-mix(in srgb, var(--ds-bg-elevated) 72%, transparent);
+    color: var(--ds-text-primary);
   }
 
   .paper-inset {
-    @apply rounded-2xl border border-border/70 bg-panel text-panel-foreground;
+    @apply rounded-md;
+    background-color: color-mix(in srgb, var(--ds-bg-soft) 70%, transparent);
+    color: var(--ds-text-primary);
   }
 
   .field-surface {
-    @apply rounded-xl border border-border/80 bg-[var(--field)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)];
+    @apply rounded-md;
+    background-color: color-mix(in srgb, var(--ds-bg-elevated) 68%, transparent);
   }
 
   .mode-public {

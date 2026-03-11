@@ -1,13 +1,10 @@
 import { notFound } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
-import { toSession, toThread } from "@/lib/firebase/converters";
-import { SESSIONS_COL, THREADS_COL, NPC_MENTIONS_COL } from "@/lib/firebase/db";
+import { getPublicSession } from "@/domains/sessions/queries";
 import { generatePlayerRecap } from "@/lib/recap";
-import { RecapView } from "@/components/sessions/RecapView";
-import { PollForm } from "@/components/polls/PollForm";
+import { RecapView } from "@/domains/sessions/components/RecapView";
+import { PollForm } from "@/domains/polls/components/PollForm";
 import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/utils";
-import type { NpcMentionWithNpc, Npc } from "@/types";
 
 export default async function SharePage({
   params,
@@ -15,59 +12,12 @@ export default async function SharePage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId: shareToken } = await params;
-  const db = adminDb();
 
-  const sessionSnap = await db
-    .collection(SESSIONS_COL)
-    .where("shareToken", "==", shareToken)
-    .limit(1)
-    .get();
+  const data = await getPublicSession(shareToken);
+  if (!data) notFound();
 
-  if (sessionSnap.empty) notFound();
-
-  const sessionDoc = sessionSnap.docs[0];
-  const session = toSession(sessionDoc);
+  const { session, threads, mentions } = data;
   const sessionId = session.id;
-
-  const [threadsSnap, mentionsSnap] = await Promise.all([
-    db.collection(THREADS_COL)
-      .where("sessionId", "==", sessionId)
-      .where("visibility", "==", "public")
-      .get(),
-    db.collection(NPC_MENTIONS_COL)
-      .where("sessionId", "==", sessionId)
-      .where("visibility", "==", "public")
-      .get(),
-  ]);
-  const threads = threadsSnap.docs.map(toThread);
-
-  // Build NpcMentionWithNpc from denormalized data — never use privateNotes
-  const mentions: NpcMentionWithNpc[] = mentionsSnap.docs.map((doc) => {
-    const d = doc.data();
-    const fakeNpc: Npc = {
-      id: d.npcId,
-      campaign_id: session.campaign_id,
-      name: d.npcName,
-      disposition: d.npcDisposition ?? null,
-      portrait_url: null,
-      stats_link: null,
-      status: null,
-      last_scene: null,
-      public_info: null,
-      private_notes: null,
-      created_at: "",
-      updated_at: "",
-    };
-    return {
-      id: doc.id,
-      npc_id: d.npcId,
-      session_id: sessionId,
-      visibility: "public" as const,
-      note: d.note ?? null,
-      created_at: "",
-      npc: fakeNpc,
-    };
-  });
 
   const playerRecap = generatePlayerRecap(session, threads, mentions);
 

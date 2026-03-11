@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toSession, toThread, toNpc } from "@/lib/firebase/converters";
-import { SESSIONS_COL, THREADS_COL, NPCS_COL } from "@/lib/firebase/db";
+import { getCampaignSessions } from "@/domains/sessions/queries";
+import { getCampaignThreads } from "@/domains/threads/queries";
+import { getCampaignNpcs } from "@/domains/npcs/queries";
 import { SearchInput } from "@/components/search/SearchInput";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,10 @@ import { VisibilityBadge } from "@/components/shared/VisibilityBadge";
 import { formatDateShort } from "@/lib/utils";
 
 const dispositionColors: Record<string, string> = {
-  ally: "text-green-700 border-green-300 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950",
-  enemy: "text-red-700 border-red-300 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950",
-  neutral: "text-blue-700 border-blue-300 bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:bg-blue-950",
-  unknown: "text-gray-600 border-gray-300 bg-gray-50 dark:text-gray-400",
+  ally: "bg-public/80 text-[var(--public-foreground)] border-transparent",
+  enemy: "bg-destructive/15 text-destructive border-transparent",
+  neutral: "bg-secondary text-secondary-foreground border-transparent",
+  unknown: "bg-muted text-muted-foreground border-transparent",
 };
 
 export default async function SearchPage({
@@ -29,19 +29,13 @@ export default async function SearchPage({
   const query = q.trim().toLowerCase();
 
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
-
-  const [sessionsSnap, threadsSnap, npcsSnap] = await Promise.all([
-    db.collection(SESSIONS_COL).where("campaignId", "==", campaignId).orderBy("date", "desc").get(),
-    db.collection(THREADS_COL).where("campaignId", "==", campaignId).orderBy("createdAt", "asc").get(),
-    db.collection(NPCS_COL).where("campaignId", "==", campaignId).orderBy("name").get(),
+  const [allSessions, allThreads, allNpcs] = await Promise.all([
+    getCampaignSessions(campaignId),
+    getCampaignThreads(campaignId),
+    getCampaignNpcs(campaignId),
   ]);
-
-  const allSessions = sessionsSnap.docs.map(toSession);
-  const allThreads = threadsSnap.docs.map(toThread);
-  const allNpcs = npcsSnap.docs.map(toNpc);
 
   const matchedSessions = query
     ? allSessions.filter((s) =>
@@ -66,7 +60,7 @@ export default async function SearchPage({
   const totalResults = matchedSessions.length + matchedThreads.length + matchedNpcs.length;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="page-shell max-w-5xl space-y-6">
       <PageHeader
         title="Search"
         backHref={`/campaigns/${campaignId}`}

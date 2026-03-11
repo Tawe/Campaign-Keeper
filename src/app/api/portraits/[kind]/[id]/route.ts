@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { NPCS_COL, PLAYERS_COL } from "@/lib/firebase/db";
+import { EVENTS_COL, LOCATIONS_COL, NPCS_COL, PLAYERS_COL } from "@/lib/firebase/db";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getPortraitObject } from "@/lib/storage/s3";
 
 const COLLECTIONS = {
   npc: NPCS_COL,
   player: PLAYERS_COL,
+  location: LOCATIONS_COL,
+  event: EVENTS_COL,
 } as const;
 
 export async function GET(

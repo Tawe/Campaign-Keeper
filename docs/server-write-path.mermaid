@@ -1,0 +1,30 @@
+sequenceDiagram
+  participant User
+  participant Form as Form / Client
+  participant Action as Server Action
+  participant Auth as requireUser / requireOwnedCampaign
+  participant DB as adminDb() / Firestore
+
+  Note over User,DB: --- Standard DM write (e.g. create session, update NPC) ---
+  User->>Form: Submit (e.g. update NPC notes)
+  Form->>Action: Invoke server action (formData / input)
+  Action->>Auth: requireUser()
+  Auth->>Auth: getSessionUser() → cookie
+  Auth-->>Action: user or redirect(/login)
+  Action->>Auth: requireOwnedCampaign(campaignId)
+  Auth->>DB: campaigns.doc(campaignId).get()
+  Auth-->>Action: ownership OK or throw
+  Action->>DB: add() / update() / batch writes
+  DB-->>Action: ref / done
+  Action->>User: redirect() or revalidatePath()
+
+  Note over User,DB: --- Player joining a campaign (joinCampaign) ---
+  User->>Form: Submit join form (/join/[campaignId])
+  Form->>Action: joinCampaign(campaignId, token)
+  Action->>Auth: requireUser()
+  Auth-->>Action: user
+  Action->>DB: campaigns.doc(campaignId).get()
+  Action->>Action: Validate campaign.inviteToken == token
+  Action->>DB: players.add({ playerUserId: uid, playerEmail })
+  Action->>DB: campaigns.update({ playerUserIds: arrayUnion(uid) })
+  Action->>User: redirect(/player/dashboard)

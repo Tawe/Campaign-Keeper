@@ -1,0 +1,125 @@
+erDiagram
+  users ||--o{ campaigns : "owns (userId)"
+  users ||--o{ players : "joins as (playerUserId)"
+
+  campaigns ||--o{ sessions : "has"
+  campaigns ||--o{ players : "has"
+  campaigns ||--o{ campaign_npcs : "has"
+  campaigns ||--o{ campaign_locations : "has"
+  campaigns ||--o{ campaign_factions : "has"
+
+  sessions ||--o{ threads : "has"
+  sessions ||--o{ npc_mentions : "has"
+  sessions ||--o{ location_visits : "has"
+  sessions ||--o{ poll_responses : "has"
+
+  npcs ||--o{ campaign_npcs : "linked in"
+  campaign_npcs ||--o{ npc_mentions : "mentioned in"
+
+  locations ||--o{ campaign_locations : "linked in"
+  campaign_locations ||--o{ location_visits : "visited in"
+
+  factions ||--o{ campaign_factions : "linked in"
+
+  campaigns {
+    string userId
+    string name
+    string system
+    string inviteToken
+    string[] playerUserIds
+  }
+
+  sessions {
+    string campaignId
+    string userId
+    string shareToken
+    string date
+    string title
+  }
+
+  threads {
+    string campaignId
+    string sessionId
+    string userId
+    string text
+    string visibility
+  }
+
+  players {
+    string campaignId
+    string userId
+    string name
+    string playerUserId
+    string playerEmail
+  }
+
+  npcs {
+    string userId
+    string name
+    string nameLower
+  }
+
+  campaign_npcs {
+    string campaignId
+    string npcId
+    string userId
+    string name
+    string disposition
+    string publicInfo
+    string privateNotes
+  }
+
+  npc_mentions {
+    string campaignId
+    string sessionId
+    string npcId
+    string campaignNpcId
+    string npcName
+    string visibility
+  }
+
+  locations {
+    string userId
+    string name
+    string nameLower
+  }
+
+  campaign_locations {
+    string campaignId
+    string locationId
+    string userId
+    string name
+    string publicInfo
+    string privateNotes
+  }
+
+  location_visits {
+    string campaignId
+    string sessionId
+    string locationId
+    string locationName
+  }
+
+  factions {
+    string userId
+    string name
+    string nameLower
+    string publicInfo
+    string privateNotes
+  }
+
+  campaign_factions {
+    string campaignId
+    string factionId
+    string userId
+    string name
+    string publicInfo
+    string privateNotes
+  }
+
+  poll_responses {
+    string sessionId
+    string campaignId
+    string playerName
+    number enjoyment
+  }

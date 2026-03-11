@@ -1,0 +1,62 @@
+flowchart TB
+  subgraph Public
+    Landing["Landing Page\n(Marketing)"]
+    JoinPage["Join Page\n/join/[campaignId]?token=...\n(Public — no auth required)"]
+  end
+
+  subgraph Auth["Sign In / Sign Up"]
+    Login["/login\n(Magic Link)"]
+  end
+
+  Login -->|"Has pending join in sessionStorage"| JoinPage
+  Login -->|"No pending join"| RouteCheck
+
+  RouteCheck{"Has DM campaigns?"}
+  RouteCheck -->|Yes| DMDashboard
+  RouteCheck -->|No, but has player memberships| PlayerDashboard
+
+  subgraph DM["DM Area  (/app/... + /campaigns/...)"]
+    DMDashboard["/app/dashboard\nList of owned campaigns"]
+
+    subgraph DMGlobal["Global Library  (/app/...)"]
+      AppNPCs["/app/npcs\nAll NPCs + which campaigns"]
+      AppLocations["/app/locations\nAll Locations + which campaigns"]
+      AppPlayers["/app/players\nAll Players + which campaigns"]
+      AppFactions["/app/factions\nAll Factions + which campaigns"]
+    end
+
+    subgraph CampaignScope["Campaign Workspace  (/campaigns/[id]/...)"]
+      CampaignDash["Campaign Dashboard\nSessions · NPCs · Players\nLocations · Factions · Threads"]
+      InviteBtn["Invite Players button\n→ copies /join/[id]?token=..."]
+      SessionFlow["Sessions\n(New / View / Edit)"]
+      NPCsPage["NPCs\n(per-campaign)"]
+      LocationsPage["Locations\n(per-campaign)"]
+      FactionsPage["Factions\n(per-campaign)"]
+      PlayersPage["Players\n(per-campaign)"]
+    end
+  end
+
+  subgraph Player["Player Area  (/player/...)"]
+    PlayerDashboard["/player/dashboard\nCampaigns I'm in\n+ my characters"]
+  end
+
+  Landing --> Login
+  JoinPage -->|"Signed in → confirm join"| PlayerDashboard
+
+  DMDashboard --> CampaignDash
+  DMDashboard --> AppNPCs
+  DMDashboard --> AppLocations
+  DMDashboard --> AppPlayers
+  DMDashboard --> AppFactions
+
+  CampaignDash --> InviteBtn
+  CampaignDash --> SessionFlow
+  CampaignDash --> NPCsPage
+  CampaignDash --> LocationsPage
+  CampaignDash --> FactionsPage
+  CampaignDash --> PlayersPage
+
+  AppNPCs -->|"Campaign tag"| NPCsPage
+  AppLocations -->|"Campaign tag"| LocationsPage
+  AppFactions -->|"Campaign tag"| FactionsPage
+  AppPlayers -->|"Campaign tag"| PlayersPage

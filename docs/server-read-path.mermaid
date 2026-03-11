@@ -1,0 +1,25 @@
+sequenceDiagram
+  participant User
+  participant Page as Server Component (Page)
+  participant Session as getSessionUser()
+  participant DB as adminDb() / Firestore
+
+  User->>Page: Request (e.g. /campaigns/xyz/npcs)
+  Page->>Session: getSessionUser()
+  Session->>Session: Read session cookie
+  Session->>Session: verifySessionCookie (Admin Auth)
+  Session-->>Page: { uid, email } or null
+
+  alt No user
+    Page->>User: redirect(/login)
+  else DM reading their own campaign
+    Page->>DB: Query by userId == uid (campaigns, npcs, etc.)
+    DB-->>Page: Documents
+    Page->>User: Render HTML (full data incl. privateNotes)
+  else Player reading a campaign
+    Page->>DB: Query by playerUserId == uid (players collection)
+    DB-->>Page: Player records
+    Page->>DB: Get campaign (uid in playerUserIds → allowed by Firestore rules)
+    DB-->>Page: Campaign + campaign_npcs / campaign_locations / campaign_factions
+    Page->>User: Render HTML (publicInfo only — privateNotes omitted at app layer)
+  end

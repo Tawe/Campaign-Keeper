@@ -6,6 +6,10 @@ import {
   S3ServiceException,
   S3Client,
 } from "@aws-sdk/client-s3";
+import {
+  RekognitionClient,
+  DetectModerationLabelsCommand,
+} from "@aws-sdk/client-rekognition";
 
 const ALLOWED_MIME_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -78,6 +82,48 @@ function getS3Client() {
   return s3Client;
 }
 
+let rekognitionClient: RekognitionClient | null = null;
+
+function getRekognitionClient(): RekognitionClient | null {
+  if (process.env.CAMPAIGN_KEEPER_ENABLE_MODERATION !== "true") return null;
+  if (rekognitionClient) return rekognitionClient;
+
+  const region = getEnv("CAMPAIGN_KEEPER_AWS_REGION", "AWS_REGION");
+  if (!region) return null;
+
+  const accessKeyId = getEnv("CAMPAIGN_KEEPER_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID");
+  const secretAccessKey = getEnv("CAMPAIGN_KEEPER_AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY");
+  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN", "AWS_SESSION_TOKEN");
+
+  rekognitionClient = new RekognitionClient({
+    region,
+    credentials:
+      accessKeyId && secretAccessKey
+        ? { accessKeyId, secretAccessKey, sessionToken }
+        : undefined,
+  });
+
+  return rekognitionClient;
+}
+
+/** Runs AWS Rekognition DetectModerationLabels on the image buffer.
+ *  Throws if the image is flagged. No-ops when moderation is disabled. */
+async function moderateImageBuffer(buffer: Buffer): Promise<void> {
+  const client = getRekognitionClient();
+  if (!client) return;
+
+  const result = await client.send(
+    new DetectModerationLabelsCommand({
+      Image: { Bytes: buffer },
+      MinConfidence: 60,
+    })
+  );
+
+  if (result.ModerationLabels && result.ModerationLabels.length > 0) {
+    throw new Error("Image contains inappropriate content and cannot be uploaded.");
+  }
+}
+
 function parseDataUrl(dataUrl: string) {
   const match = dataUrl.match(/^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=]+)$/i);
   if (!match) {
@@ -125,11 +171,14 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
 }
 
 export async function savePortraitDataUrl(
-  kind: "player" | "npc",
+  kind: "player" | "npc" | "location" | "event",
   id: string,
   dataUrl: string
 ) {
   const { mimeType, extension, buffer } = parseDataUrl(dataUrl);
+
+  await moderateImageBuffer(buffer);
+
   const path = `portraits/${kind}/${id}/${randomUUID()}.${extension}`;
 
   try {
@@ -183,4 +232,23 @@ export async function deletePortrait(path: string | null | undefined) {
   } catch {
     // Best-effort cleanup only.
   }
+}
+
+export async function handlePortraitUpdate(
+  kind: "npc" | "player" | "location" | "event",
+  entityId: string,
+  value: string,
+  currentPath: string | null,
+): Promise<{ portraitPath: string | null; portraitUrl: null }> {
+  let nextPortraitPath = currentPath;
+
+  if (value.startsWith("data:")) {
+    nextPortraitPath = await savePortraitDataUrl(kind, entityId, value);
+    await deletePortrait(currentPath);
+  } else if (!value.trim()) {
+    nextPortraitPath = null;
+    await deletePortrait(currentPath);
+  }
+
+  return { portraitPath: nextPortraitPath, portraitUrl: null };
 }

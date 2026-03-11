@@ -1,13 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toThread, toSession } from "@/lib/firebase/converters";
-import { THREADS_COL, SESSIONS_COL } from "@/lib/firebase/db";
+import { getThread } from "@/domains/threads/queries";
+import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { VisibilityBadge } from "@/components/shared/VisibilityBadge";
 import { Badge } from "@/components/ui/badge";
-import { ThreadItem } from "@/components/threads/ThreadItem";
 import { formatDateShort } from "@/lib/utils";
 
 export default async function ThreadDetailPage({
@@ -17,20 +15,16 @@ export default async function ThreadDetailPage({
 }) {
   const { campaignId, threadId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
-  const threadDoc = await db.collection(THREADS_COL).doc(threadId).get();
-  if (!threadDoc.exists) notFound();
+  const data = await getThread(threadId);
+  if (!data) notFound();
 
-  const thread = toThread(threadDoc);
+  const { thread, originSession } = data;
   if (thread.campaign_id !== campaignId) notFound();
 
-  const originSessionDoc = await db.collection(SESSIONS_COL).doc(thread.session_id).get();
-  const originSession = originSessionDoc.exists ? toSession(originSessionDoc) : null;
-
   return (
-    <div className="max-w-lg mx-auto p-4 sm:p-6">
+    <div className="reading-shell space-y-6">
       <PageHeader
         title="Thread"
         backHref={`/campaigns/${campaignId}`}

@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /campaigns/
+Disallow: /app/
+Disallow: /player/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /join/
+Disallow: /share/
+Disallow: /design-system/
+
+Allow: /
+Allow: /login
+Allow: /features
+Allow: /about
+Allow: /pricing

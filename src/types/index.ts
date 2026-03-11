@@ -23,14 +23,23 @@ export interface Campaign {
   name: string;
   system: string | null;
   participants: string[];
+  invite_token: string;
+  player_user_ids: string[];
   created_at: string;
   updated_at: string;
+}
+
+export interface InGameDate {
+  year: number;
+  month: number; // 1-based index into Calendar.months
+  day: number;
 }
 
 export interface Session {
   id: string;
   campaign_id: string;
   date: string;
+  in_game_date: InGameDate | null;
   title: string | null;
   public_highlights: string[];
   private_notes: string;
@@ -60,6 +69,11 @@ export interface Thread {
   updated_at: string;
 }
 
+export interface NpcClass {
+  name: string;
+  level: number;
+}
+
 export interface Npc {
   id: string;
   campaign_id: string;
@@ -71,6 +85,12 @@ export interface Npc {
   last_scene: string | null;  // last known location, auto-updated from sessions
   public_info: string | null;
   private_notes: string | null;
+  race: string | null;
+  sex: string | null;
+  age: string | null;
+  alignment: string | null;
+  npc_class: NpcClass[];      // multi-class support; stored as array in global npcs doc
+  faction_names: string[];    // campaign-specific faction membership (stored in campaign_npcs)
   created_at: string;
   updated_at: string;
 }
@@ -79,6 +99,9 @@ export interface Location {
   id: string;
   campaign_id: string;
   name: string;
+  image_url: string | null;
+  parent_location_id: string | null;
+  terrain: string[];           // type tags e.g. ["Village", "Glacier"]
   public_info: string | null;
   private_notes: string | null;
   created_at: string;
@@ -133,9 +156,36 @@ export interface Player {
   campaign_id: string;
   name: string;
   portrait_url: string | null;
+  player_user_id: string | null;
+  player_email: string | null;
   characters: PlayerCharacter[];
   created_at: string;
   updated_at: string;
+}
+
+export interface Faction {
+  id: string;
+  campaign_id: string;
+  name: string;
+  status: string | null;
+  influence: string | null;
+  faction_type: string | null;
+  alignment: string | null;
+  founded: string | null;
+  disbanded: string | null;
+  member_count: string | null;
+  home_base: string | null;
+  leader_names: string[];
+  allegiances: string[];
+  enemies: string[];
+  public_info: string | null;
+  private_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FactionWithCampaigns extends Faction {
+  campaign_ids: string[];
 }
 
 export interface PollResponse {
@@ -148,6 +198,41 @@ export interface PollResponse {
   improve: string;
   looking_forward: string;
   created_at: string;
+}
+
+export interface CampaignEvent {
+  id: string;              // global event ID
+  campaign_id: string;
+  title: string;
+  event_type: string | null;
+  start_date: InGameDate | null;
+  end_date: InGameDate | null;
+  description: string;
+  private_notes: string;
+  image_url: string | null;
+  npc_ids: string[];
+  location_id: string | null;
+  faction_ids: string[];
+  player_ids: string[];
+  session_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendarMonth {
+  name: string;
+  days: number;
+}
+
+export interface Calendar {
+  id: string;          // = campaignId
+  campaign_id: string;
+  name: string;
+  year_label: string;
+  months: CalendarMonth[];
+  weekdays: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 // Recap types (pure — no Supabase dependency)

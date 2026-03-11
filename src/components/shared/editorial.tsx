@@ -31,9 +31,9 @@ export function SectionFrame({
 
   return (
     <section className={cn("overflow-hidden", toneClass, className)}>
-      <div className="flex flex-col gap-4 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
         <div className="space-y-1">
-          {eyebrow ? <p className="section-eyebrow">{eyebrow}</p> : null}
+          {eyebrow ? <p className="ds-section-header">{eyebrow}</p> : null}
           <h2 className="font-serif text-xl tracking-[-0.02em] text-foreground">{title}</h2>
           {description ? (
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
@@ -61,7 +61,7 @@ export function MetaStrip({
       {filtered.map((item, index) => (
         <span
           key={index}
-          className="inline-flex items-center gap-2 rounded-full bg-background/70 px-3 py-1"
+          className="inline-flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1"
         >
           {item}
         </span>
@@ -92,7 +92,7 @@ export function ModeCallout({
       )}
     >
       <div className="space-y-1">
-        <p className="section-eyebrow">{mode === "public" ? "Player-facing" : "DM only"}</p>
+        <p className="ds-section-header">{mode === "public" ? "Player-facing" : "DM only"}</p>
         <p className="font-medium text-foreground">{title}</p>
         {description ? <p className="text-sm leading-6 text-muted-foreground">{description}</p> : null}
         {children}
@@ -111,7 +111,7 @@ export function StackedList({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/80 bg-card shadow-[0_1px_0_rgba(0,0,0,0.03)] divide-y divide-border/70",
+        "overflow-hidden rounded-lg bg-muted/40 divide-y divide-border/60",
         className
       )}
     >

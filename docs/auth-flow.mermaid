@@ -1,0 +1,49 @@
+sequenceDiagram
+  participant User
+  participant JoinPage as /join/[campaignId] (Public)
+  participant Login as /login (LoginForm)
+  participant FirebaseAuth as Firebase Auth
+  participant Email as User email
+  participant Callback as /auth/callback
+  participant API as POST /api/session
+  participant Cookie as Session Cookie
+  participant Action as joinCampaign() Server Action
+  participant Firestore as Firestore
+
+  Note over User,JoinPage: --- Campaign invite flow ---
+  User->>JoinPage: Click DM's invite link
+  JoinPage->>JoinPage: Validate token vs campaign.inviteToken
+  JoinPage->>User: Show "Sign in to join [Campaign]"
+  User->>JoinPage: Click "Sign in to join"
+  JoinPage->>JoinPage: Store joinCampaignId + joinToken in sessionStorage
+  JoinPage->>Login: redirect(/login)
+
+  Note over User,Callback: --- Magic link auth ---
+  User->>Login: Enter email
+  Login->>FirebaseAuth: sendSignInLinkToEmail(email, callbackUrl)
+  FirebaseAuth->>Email: Send magic link
+  Login->>User: "Check your email"
+  User->>Email: Click link
+  Email->>Callback: GET /auth/callback?...
+  Callback->>FirebaseAuth: signInWithEmailLink(email, url)
+  FirebaseAuth-->>Callback: credential (idToken)
+  Callback->>API: POST { idToken }
+  API->>API: adminAuth().createSessionCookie(idToken)
+  API->>Cookie: Set session cookie (httpOnly, 5 days)
+  API-->>Callback: { ok: true }
+
+  Note over Callback,Action: --- Post-login routing ---
+  alt Pending join in sessionStorage
+    Callback->>Callback: Read joinCampaignId + joinToken, clear sessionStorage
+    Callback->>JoinPage: redirect(/join/[campaignId]?token=...)
+    JoinPage->>User: Show "Join campaign" button (user now logged in)
+    User->>Action: Submit join form
+    Action->>Firestore: Create players doc (playerUserId = uid)
+    Action->>Firestore: campaign.playerUserIds = arrayUnion(uid)
+    Action->>User: redirect(/player/dashboard)
+  else No pending join — DM account
+    Callback->>User: redirect(/app/dashboard)
+  end
+
+  Note over User,Firestore: --- Player-only account ---
+  Note right of Firestore: /app/dashboard checks:<br/>no owned campaigns + has player records<br/>→ redirect(/player/dashboard)

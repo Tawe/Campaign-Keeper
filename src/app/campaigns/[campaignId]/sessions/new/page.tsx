@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toNpc } from "@/lib/firebase/converters";
-import { NPCS_COL, PLAYERS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
-import { SessionForm } from "@/components/sessions/SessionForm";
+import { getCampaignNpcs } from "@/domains/npcs/queries";
+import { getCampaignPlayers } from "@/domains/players/queries";
+import { getCampaignLocations } from "@/domains/locations/queries";
+import { getCampaignCalendar } from "@/domains/calendars/queries";
+import { SessionForm } from "@/domains/sessions/components/SessionForm";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default async function NewSessionPage({
@@ -13,22 +14,21 @@ export default async function NewSessionPage({
 }) {
   const { campaignId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
-  const [npcsSnap, playersSnap, locationsSnap] = await Promise.all([
-    db.collection(NPCS_COL).where("campaignId", "==", campaignId).orderBy("name").get(),
-    db.collection(PLAYERS_COL).where("campaignId", "==", campaignId).get(),
-    db.collection(LOCATIONS_COL).where("campaignId", "==", campaignId).orderBy("name").get(),
+  const [existingNpcs, players, locations, calendar] = await Promise.all([
+    getCampaignNpcs(campaignId),
+    getCampaignPlayers(campaignId),
+    getCampaignLocations(campaignId),
+    getCampaignCalendar(campaignId),
   ]);
 
-  const existingNpcs = npcsSnap.docs.map(toNpc);
-  const existingPlayers = playersSnap.docs.map((doc) => ({
-    id: doc.id,
-    name: doc.data().name as string,
-    characters: ((doc.data().characters ?? []) as { name: string }[]).map((c) => ({ name: c.name })),
+  const existingPlayers = players.map((p) => ({
+    id: p.id,
+    name: p.name,
+    characters: p.characters.map((c) => ({ name: c.name })),
   }));
-  const existingLocationNames = locationsSnap.docs.map((doc) => doc.data().name as string);
+  const existingLocationNames = locations.map((l) => l.name);
 
   return (
     <div className="reading-shell">
@@ -43,6 +43,7 @@ export default async function NewSessionPage({
         existingNpcs={existingNpcs}
         existingPlayers={existingPlayers}
         existingLocationNames={existingLocationNames}
+        calendar={calendar}
       />
     </div>
   );

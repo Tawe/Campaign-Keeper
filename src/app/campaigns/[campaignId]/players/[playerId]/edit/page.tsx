@@ -1,9 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toPlayer } from "@/lib/firebase/converters";
-import { PLAYERS_COL } from "@/lib/firebase/db";
-import { PlayerForm } from "@/components/players/PlayerForm";
+import { getCampaign } from "@/domains/campaigns/queries";
+import { getPlayer } from "@/domains/players/queries";
+import { PlayerForm } from "@/domains/players/components/PlayerForm";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default async function EditPlayerPage({
@@ -13,13 +12,13 @@ export default async function EditPlayerPage({
 }) {
   const { campaignId, playerId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const doc = await adminDb().collection(PLAYERS_COL).doc(playerId).get();
-  if (!doc.exists || doc.data()?.userId !== user.uid) notFound();
-
-  const player = toPlayer(doc);
-  if (player.campaign_id !== campaignId) notFound();
+  const [campaign, player] = await Promise.all([
+    getCampaign(campaignId, user.uid),
+    getPlayer(playerId),
+  ]);
+  if (!campaign || !player || player.campaign_id !== campaignId) notFound();
 
   return (
     <div className="reading-shell">

@@ -1,21 +1,21 @@
 import { notFound, redirect } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toSession, toThread } from "@/lib/firebase/converters";
-import { SESSIONS_COL, THREADS_COL, NPC_MENTIONS_COL, POLL_RESPONSES_COL, PLAYERS_COL } from "@/lib/firebase/db";
+import { getSessionWithDetails } from "@/domains/sessions/queries";
+import { getCampaignPlayers } from "@/domains/players/queries";
+import { getEventsForSession } from "@/domains/events/queries";
+import { EventCard } from "@/domains/events/components/EventCard";
 import { generatePlayerRecap, generateDmRecap } from "@/lib/recap";
-import { CopyShareLinkButton } from "@/components/sessions/CopyShareLinkButton";
-import { RecapTabs } from "@/components/sessions/RecapTabs";
-import { SessionDetails } from "@/components/sessions/SessionDetails";
-import { DmReflectionView } from "@/components/sessions/DmReflectionView";
-import { SessionActions } from "@/components/sessions/SessionActions";
-import { PollResults } from "@/components/polls/PollResults";
+import { CopyShareLinkButton } from "@/domains/sessions/components/CopyShareLinkButton";
+import { RecapTabs } from "@/domains/sessions/components/RecapTabs";
+import { SessionDetails } from "@/domains/sessions/components/SessionDetails";
+import { DmReflectionView } from "@/domains/sessions/components/DmReflectionView";
+import { SessionActions } from "@/domains/sessions/components/SessionActions";
+import { PollResults } from "@/domains/polls/components/PollResults";
 import { MetaStrip, SectionFrame } from "@/components/shared/editorial";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDateShort } from "@/lib/utils";
-import type { NpcMentionWithNpc, Npc, PollResponse } from "@/types";
 
 export default async function SessionDetailPage({
   params,
@@ -24,73 +24,23 @@ export default async function SessionDetailPage({
 }) {
   const { campaignId, sessionId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
-
-  const [sessionDoc, threadsSnap, mentionsSnap, pollSnap, playersSnap] = await Promise.all([
-    db.collection(SESSIONS_COL).doc(sessionId).get(),
-    db.collection(THREADS_COL).where("sessionId", "==", sessionId).orderBy("createdAt").get(),
-    db.collection(NPC_MENTIONS_COL).where("sessionId", "==", sessionId).get(),
-    db.collection(POLL_RESPONSES_COL).where("sessionId", "==", sessionId).orderBy("createdAt", "desc").get(),
-    db.collection(PLAYERS_COL).where("campaignId", "==", campaignId).get(),
+  const [data, players, events] = await Promise.all([
+    getSessionWithDetails(sessionId, campaignId),
+    getCampaignPlayers(campaignId),
+    getEventsForSession(campaignId, sessionId),
   ]);
 
-  if (!sessionDoc.exists) notFound();
-  const session = toSession(sessionDoc);
-  if (session.campaign_id !== campaignId) notFound();
+  if (!data) notFound();
 
-  const threads = threadsSnap.docs.map(toThread);
-
-  // Build NpcMentionWithNpc from denormalized mention docs
-  const mentions: NpcMentionWithNpc[] = mentionsSnap.docs.map((doc) => {
-    const d = doc.data();
-    const fakeNpc: Npc = {
-      id: d.npcId,
-      campaign_id: campaignId,
-      name: d.npcName,
-      disposition: d.npcDisposition ?? null,
-      portrait_url: null,
-      stats_link: null,
-      status: null,
-      last_scene: null,
-      public_info: null,
-      private_notes: null,
-      created_at: "",
-      updated_at: "",
-    };
-    return {
-      id: doc.id,
-      npc_id: d.npcId,
-      session_id: sessionId,
-      visibility: d.visibility,
-      note: d.note ?? null,
-      created_at: d.createdAt?.toDate?.()?.toISOString() ?? "",
-      npc: fakeNpc,
-    };
-  });
-
-  const pollResponses: PollResponse[] = pollSnap.docs.map((doc) => {
-    const d = doc.data();
-    return {
-      id: doc.id,
-      session_id: d.sessionId,
-      campaign_id: d.campaignId,
-      player_name: d.playerName ?? null,
-      enjoyment: d.enjoyment,
-      liked: d.liked ?? "",
-      improve: d.improve ?? "",
-      looking_forward: d.lookingForward ?? "",
-      created_at: d.createdAt?.toDate?.()?.toISOString() ?? "",
-    };
-  });
+  const { session, threads, mentions, pollResponses } = data;
 
   // Build charNameLower → { playerName, playerId } for display in session details
   const characterOwners = new Map<string, { playerName: string; playerId: string }>();
-  playersSnap.docs.forEach((doc) => {
-    const d = doc.data();
-    ((d.characters ?? []) as { name: string }[]).forEach((c) => {
-      characterOwners.set(c.name.toLowerCase(), { playerName: d.name as string, playerId: doc.id });
+  players.forEach((player) => {
+    player.characters.forEach((c) => {
+      characterOwners.set(c.name.toLowerCase(), { playerName: player.name, playerId: player.id });
     });
   });
 
@@ -140,6 +90,24 @@ export default async function SessionDetailPage({
           <DmReflectionView reflection={session.dm_reflection} />
         </>
       )}
+
+      <Separator className="my-8" />
+
+      <SectionFrame
+        title="Events"
+        eyebrow="World History"
+        description="Major events that occurred during this session."
+      >
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No events linked yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} campaignId={campaignId} />
+            ))}
+          </div>
+        )}
+      </SectionFrame>
 
       <Separator className="my-8" />
 

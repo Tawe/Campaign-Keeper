@@ -1,70 +1,69 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toNpc, toSession } from "@/lib/firebase/converters";
-import { NPCS_COL, NPC_MENTIONS_COL, SESSIONS_COL } from "@/lib/firebase/db";
-import { NpcProfileEditor } from "@/components/npcs/NpcProfileEditor";
+import { getNpcWithCampaignData, getNpcMentionHistory } from "@/domains/npcs/queries";
+import { getEventsForNpc } from "@/domains/events/queries";
+import { EventCard } from "@/domains/events/components/EventCard";
+import { NpcProfileEditor } from "@/domains/npcs/components/NpcProfileEditor";
+import { updateNpcInfo } from "@/domains/npcs/actions";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
+import { NpcClassEditor } from "@/domains/npcs/components/NpcClassEditor";
 import { MetaStrip, SectionFrame, StackedList } from "@/components/shared/editorial";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { VisibilityBadge } from "@/components/shared/VisibilityBadge";
 import { InlineEditor } from "@/components/shared/InlineEditor";
 import { Portrait } from "@/components/shared/Portrait";
 import { Badge } from "@/components/ui/badge";
-import { updateNpcInfo } from "@/app/actions/npcs";
 import { formatDateShort } from "@/lib/utils";
 import type { NpcDisposition } from "@/types";
 
 const dispositionColors: Record<string, string> = {
-  ally: "text-green-700 border-green-300 bg-green-50",
-  enemy: "text-red-700 border-red-300 bg-red-50",
-  neutral: "text-blue-700 border-blue-300 bg-blue-50",
-  unknown: "text-gray-600 border-gray-300 bg-gray-50",
+  ally: "bg-public/80 text-[var(--public-foreground)] border-transparent",
+  enemy: "bg-destructive/15 text-destructive border-transparent",
+  neutral: "bg-secondary text-secondary-foreground border-transparent",
+  unknown: "bg-muted text-muted-foreground border-transparent",
 };
 
 export default async function NpcDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ campaignId: string; npcId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { campaignId, npcId } = await params;
+  const { from } = await searchParams;
+  const fromVault = from === "vault";
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
-
-  const [npcDoc, mentionsSnap] = await Promise.all([
-    db.collection(NPCS_COL).doc(npcId).get(),
-    db.collection(NPC_MENTIONS_COL).where("npcId", "==", npcId).orderBy("createdAt").get(),
+  const [npc, history, events] = await Promise.all([
+    getNpcWithCampaignData(npcId, campaignId),
+    getNpcMentionHistory(npcId, campaignId),
+    getEventsForNpc(campaignId, npcId),
   ]);
 
-  if (!npcDoc.exists) notFound();
-  const npc = toNpc(npcDoc);
-  if (npc.campaign_id !== campaignId) notFound();
+  if (!npc) notFound();
 
-  // Fetch sessions for each mention to get date/title
-  const sessionIds = [...new Set(mentionsSnap.docs.map((d) => d.data().sessionId))];
-  const sessionMap = new Map<string, { id: string; date: string; title: string | null }>();
+  const { mentionsSnap, sessionMap } = history;
 
-  await Promise.all(
-    sessionIds.map(async (sid) => {
-      const doc = await db.collection(SESSIONS_COL).doc(sid).get();
-      if (doc.exists) {
-        const s = toSession(doc);
-        sessionMap.set(sid, { id: s.id, date: s.date, title: s.title });
-      }
-    })
-  );
+  const metCharacterMap = new Map<string, string>();
+  sessionMap.forEach((session) => {
+    session.characterNames.forEach((name) => {
+      const key = name.toLowerCase();
+      if (!metCharacterMap.has(key)) metCharacterMap.set(key, name);
+    });
+  });
+  const metCharacters = Array.from(metCharacterMap.values()).sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="reading-shell space-y-6">
       <PageHeader
         title={npc.name}
         eyebrow="NPC Record"
-        backHref={`/campaigns/${campaignId}/npcs`}
-        backLabel="NPCs"
+        backHref={fromVault ? "/app/npcs" : `/campaigns/${campaignId}/npcs`}
+        backLabel={fromVault ? "Vault" : "NPCs"}
       />
 
       <div className="paper-panel space-y-5 px-5 py-5 sm:px-6">
@@ -135,6 +134,44 @@ export default async function NpcDetailPage({
           />
         </div>
 
+        <div className="grid grid-cols-3 gap-3">
+          <InlineEditor
+            label="Race"
+            value={npc.race}
+            placeholder="Human, Elf…"
+            action={updateNpcInfo.bind(null, npcId, campaignId, "race")}
+          />
+          <InlineEditor
+            label="Sex"
+            value={npc.sex}
+            placeholder="Female, Male…"
+            action={updateNpcInfo.bind(null, npcId, campaignId, "sex")}
+          />
+          <InlineEditor
+            label="Age"
+            value={npc.age}
+            placeholder="35, 860…"
+            action={updateNpcInfo.bind(null, npcId, campaignId, "age")}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <InlineEditor
+            label="Alignment"
+            value={npc.alignment}
+            placeholder="Neutral Good…"
+            action={updateNpcInfo.bind(null, npcId, campaignId, "alignment")}
+          />
+          <NpcClassEditor npcId={npcId} campaignId={campaignId} classes={npc.npc_class} />
+        </div>
+
+        <InlineEditor
+          label="Factions"
+          value={npc.faction_names.length > 0 ? npc.faction_names.join(", ") : null}
+          placeholder="Comma-separated faction names…"
+          action={updateNpcInfo.bind(null, npcId, campaignId, "factionNames")}
+        />
+
         <div className="space-y-3">
           <InlineEditor
             label="What players know"
@@ -150,6 +187,24 @@ export default async function NpcDetailPage({
             action={updateNpcInfo.bind(null, npcId, campaignId, "privateNotes")}
           />
         </div>
+
+        <SectionFrame
+          title="Players Met"
+          eyebrow="Party Connections"
+          description="Player characters who have met this NPC."
+        >
+          {metCharacters.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No player characters recorded yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {metCharacters.map((name) => (
+                <Badge key={name} variant="secondary" className="font-normal">
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </SectionFrame>
 
         <SectionFrame
           title="Appearances"
@@ -188,6 +243,21 @@ export default async function NpcDetailPage({
                 );
               })}
             </StackedList>
+          )}
+        </SectionFrame>
+        <SectionFrame
+          title="Events"
+          eyebrow="World History"
+          description="Major events this NPC was involved in."
+        >
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No events linked yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {events.map((event) => (
+                <EventCard key={event.id} event={event} campaignId={campaignId} />
+              ))}
+            </div>
           )}
         </SectionFrame>
       </div>

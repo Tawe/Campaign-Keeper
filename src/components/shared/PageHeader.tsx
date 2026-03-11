@@ -31,7 +31,7 @@ export function PageHeader({
       )}
       <div className="paper-panel flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-6">
         <div className="space-y-1">
-          {eyebrow ? <p className="section-eyebrow">{eyebrow}</p> : null}
+          {eyebrow ? <p className="ds-section-header">{eyebrow}</p> : null}
           <h1 className="ink-title text-3xl sm:text-[2.4rem]">{title}</h1>
           {subtitle && (
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{subtitle}</p>

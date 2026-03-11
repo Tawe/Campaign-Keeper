@@ -1,11 +1,14 @@
 import { notFound, redirect } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toSession, toNpc } from "@/lib/firebase/converters";
-import { SESSIONS_COL, THREADS_COL, NPC_MENTIONS_COL, NPCS_COL, PLAYERS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
-import { SessionForm } from "@/components/sessions/SessionForm";
+import { getCampaign } from "@/domains/campaigns/queries";
+import { getSessionWithDetails } from "@/domains/sessions/queries";
+import { getCampaignNpcs } from "@/domains/npcs/queries";
+import { getCampaignPlayers } from "@/domains/players/queries";
+import { getCampaignLocations } from "@/domains/locations/queries";
+import { getCampaignCalendar } from "@/domains/calendars/queries";
+import { SessionForm } from "@/domains/sessions/components/SessionForm";
 import { PageHeader } from "@/components/shared/PageHeader";
-import type { SessionFormInitialValues } from "@/components/sessions/SessionForm";
+import type { SessionFormInitialValues } from "@/domains/sessions/components/SessionForm";
 import type { NpcDisposition, Visibility } from "@/types";
 
 export default async function EditSessionPage({
@@ -15,34 +18,34 @@ export default async function EditSessionPage({
 }) {
   const { campaignId, sessionId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
+  const campaign = await getCampaign(campaignId, user.uid);
+  if (!campaign) notFound();
 
-  const [sessionDoc, threadsSnap, mentionsSnap, npcsSnap, playersSnap, locationsSnap] = await Promise.all([
-    db.collection(SESSIONS_COL).doc(sessionId).get(),
-    db.collection(THREADS_COL).where("sessionId", "==", sessionId).orderBy("createdAt").get(),
-    db.collection(NPC_MENTIONS_COL).where("sessionId", "==", sessionId).get(),
-    db.collection(NPCS_COL).where("campaignId", "==", campaignId).orderBy("name").get(),
-    db.collection(PLAYERS_COL).where("campaignId", "==", campaignId).get(),
-    db.collection(LOCATIONS_COL).where("campaignId", "==", campaignId).orderBy("name").get(),
+  const [data, existingNpcs, players, locations, calendar] = await Promise.all([
+    getSessionWithDetails(sessionId, campaignId),
+    getCampaignNpcs(campaignId),
+    getCampaignPlayers(campaignId),
+    getCampaignLocations(campaignId),
+    getCampaignCalendar(campaignId),
   ]);
 
-  if (!sessionDoc.exists) notFound();
-  const session = toSession(sessionDoc);
-  if (session.campaign_id !== campaignId || sessionDoc.data()?.userId !== user.uid) notFound();
+  if (!data) notFound();
 
-  const existingNpcs = npcsSnap.docs.map(toNpc);
-  const existingPlayers = playersSnap.docs.map((doc) => ({
-    id: doc.id,
-    name: doc.data().name as string,
-    characters: ((doc.data().characters ?? []) as { name: string }[]).map((c) => ({ name: c.name })),
+  const { session, threads, mentions } = data;
+
+  const existingPlayers = players.map((p) => ({
+    id: p.id,
+    name: p.name,
+    characters: p.characters.map((c) => ({ name: c.name })),
   }));
-  const existingLocationNames = locationsSnap.docs.map((doc) => doc.data().name as string);
+  const existingLocationNames = locations.map((l) => l.name);
 
   const r = session.dm_reflection;
   const initialValues: SessionFormInitialValues = {
     date: session.date,
+    inGameDate: session.in_game_date ?? null,
     title: session.title ?? "",
     startingLocation: session.starting_location ?? "",
     timePassed: session.time_passed ?? "",
@@ -50,24 +53,17 @@ export default async function EditSessionPage({
       ? session.characters.map((c) => ({ name: c.name, statusAtEnd: c.status_at_end }))
       : [{ name: "", statusAtEnd: "" }],
     npcs: (() => {
-      // Build a name→statusAtEnd map from session.npc_statuses
       const statusMap = new Map<string, string>();
       session.npc_statuses.forEach((s) => statusMap.set(s.name.toLowerCase(), s.status_at_end));
 
-      // Start with mention rows (they carry disposition/visibility/note)
-      const mentionRows = mentionsSnap.docs.map((doc) => {
-        const d = doc.data();
-        const name = d.npcName as string;
-        return {
-          name,
-          disposition: (d.npcDisposition ?? "") as NpcDisposition | "",
-          visibility: d.visibility as Visibility,
-          mentionNote: (d.note ?? "") as string,
-          statusAtEnd: statusMap.get(name.toLowerCase()) ?? "",
-        };
-      });
+      const mentionRows = mentions.map((m) => ({
+        name: m.npc.name,
+        disposition: (m.npc.disposition ?? "") as NpcDisposition | "",
+        visibility: m.visibility as Visibility,
+        mentionNote: m.note ?? "",
+        statusAtEnd: statusMap.get(m.npc.name.toLowerCase()) ?? "",
+      }));
 
-      // Add any npc_statuses entries not already covered by a mention
       const mentionNames = new Set(mentionRows.map((r) => r.name.toLowerCase()));
       const extraRows = session.npc_statuses
         .filter((s) => !mentionNames.has(s.name.toLowerCase()))
@@ -89,10 +85,7 @@ export default async function EditSessionPage({
     highlights: session.public_highlights.length > 0 ? session.public_highlights : ["", "", ""],
     privateNotes: session.private_notes,
     tags: session.tags,
-    threads: threadsSnap.docs.map((doc) => {
-      const d = doc.data();
-      return { text: d.text as string, visibility: d.visibility as Visibility };
-    }),
+    threads: threads.map((t) => ({ text: t.text, visibility: t.visibility as Visibility })),
     dmReflection: {
       plotAdvancement: r?.plot_advancement ?? null,
       keyEvents: r?.key_events.length ? r.key_events : [""],
@@ -123,6 +116,7 @@ export default async function EditSessionPage({
         existingLocationNames={existingLocationNames}
         sessionId={sessionId}
         initialValues={initialValues}
+        calendar={calendar}
       />
     </div>
   );

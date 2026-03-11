@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
-import { PlayerForm } from "@/components/players/PlayerForm";
+import { PlayerForm } from "@/domains/players/components/PlayerForm";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 export default async function NewPlayerPage({
@@ -10,7 +10,7 @@ export default async function NewPlayerPage({
 }) {
   const { campaignId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
   return (
     <div className="reading-shell">

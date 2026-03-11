@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Plus, Search } from "lucide-react";
-import { adminDb } from "@/lib/firebase/admin";
 import { getSessionUser } from "@/lib/firebase/session";
-import { toCampaign, toSession, toThread } from "@/lib/firebase/converters";
-import { CAMPAIGNS_COL, SESSIONS_COL, THREADS_COL, NPC_MENTIONS_COL, PLAYERS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MetaStrip, SectionFrame, StackedList } from "@/components/shared/editorial";
-import { SessionCard } from "@/components/sessions/SessionCard";
-import { ThreadList } from "@/components/threads/ThreadList";
-import { NpcIndex } from "@/components/npcs/NpcIndex";
-import { DeleteCampaignButton } from "@/components/campaigns/DeleteCampaignButton";
-import type { NpcWithLastMention } from "@/types";
+import { getCampaign, getCampaignCounts, getCampaignNpcIndex } from "@/domains/campaigns/queries";
+import { getCampaignSessions } from "@/domains/sessions/queries";
+import { getCampaignThreads } from "@/domains/threads/queries";
+import { ThreadItem } from "@/domains/threads/components/ThreadItem";
+import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
+import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
+import { CampaignWorkspaceSidebar } from "@/domains/campaigns/components/CampaignWorkspaceSidebar";
+import { Portrait } from "@/components/shared/Portrait";
+import { Panel } from "@/components/ui/panel";
+import { StatTile } from "@/components/ui/stat-tile";
+import { SectionHeader } from "@/components/ui/section-header";
+import { TimelineItem } from "@/components/ui/timeline-item";
+import { PrimaryButton } from "@/components/ui/primary-button";
+import { SecondaryButton } from "@/components/ui/secondary-button";
+import { formatDateShort } from "@/lib/utils";
 
 export default async function CampaignDashboardPage({
   params,
@@ -22,215 +25,185 @@ export default async function CampaignDashboardPage({
 }) {
   const { campaignId } = await params;
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
-  const db = adminDb();
+  const campaign = await getCampaign(campaignId, user.uid);
+  if (!campaign) notFound();
 
-  const [campaignDoc, sessionsSnap, threadsSnap, playersSnap, locationsSnap] = await Promise.all([
-    db.collection(CAMPAIGNS_COL).doc(campaignId).get(),
-    db.collection(SESSIONS_COL).where("campaignId", "==", campaignId).orderBy("date", "desc").get(),
-    db.collection(THREADS_COL).where("campaignId", "==", campaignId).orderBy("createdAt", "asc").get(),
-    db.collection(PLAYERS_COL).where("campaignId", "==", campaignId).get(),
-    db.collection(LOCATIONS_COL).where("campaignId", "==", campaignId).get(),
+  const [sessions, threads, counts] = await Promise.all([
+    getCampaignSessions(campaignId),
+    getCampaignThreads(campaignId),
+    getCampaignCounts(campaignId),
   ]);
 
-  if (!campaignDoc.exists || campaignDoc.data()?.userId !== user.uid) notFound();
-
-  const campaign = toCampaign(campaignDoc);
-  const sessions = sessionsSnap.docs.map(toSession);
-  const threads = threadsSnap.docs.map(toThread);
   const openThreads = threads.filter((t) => t.status === "open");
-  const playerCount = playersSnap.size;
-  const locationCount = locationsSnap.size;
+  const { playerCount, locationCount } = counts;
 
-  // Build NPC index from mentions (denormalized npcName/npcDisposition in mention docs)
-  const npcMap = new Map<string, NpcWithLastMention>();
-
-  if (sessions.length > 0) {
-    const sessionIds = sessions.map((s) => s.id);
-    // Fetch mentions in batches of 30 (Firestore 'in' limit)
-    for (let i = 0; i < sessionIds.length; i += 30) {
-      const chunk = sessionIds.slice(i, i + 30);
-      const mentionsSnap = await db
-        .collection(NPC_MENTIONS_COL)
-        .where("sessionId", "in", chunk)
-        .get();
-
-      mentionsSnap.docs.forEach((doc) => {
-        const d = doc.data();
-        const existing = npcMap.get(d.npcId);
-        const sessionDate = sessions.find((s) => s.id === d.sessionId)?.date ?? "";
-        if (!existing || sessionDate > existing.last_mentioned) {
-          npcMap.set(d.npcId, {
-            id: d.npcId,
-            campaign_id: campaignId,
-            name: d.npcName,
-            disposition: d.npcDisposition ?? null,
-            portrait_url: null,
-            stats_link: null,
-            status: null,
-            last_scene: null,
-            public_info: null,
-            private_notes: null,
-            created_at: "",
-            updated_at: "",
-            last_mentioned: sessionDate,
-            last_session_id: d.sessionId,
-          });
-        }
-      });
-    }
-  }
-
-  const npcs = Array.from(npcMap.values()).sort(
-    (a, b) => b.last_mentioned.localeCompare(a.last_mentioned)
-  );
+  const sessionIds = sessions.map((s) => s.id);
+  const npcs = await getCampaignNpcIndex(campaignId, sessionIds, sessions);
 
   return (
-    <div className="page-shell max-w-4xl space-y-6">
-      <PageHeader
-        title={campaign.name}
-        eyebrow="Campaign Record"
-        subtitle={[campaign.system, campaign.participants.join(", ")]
-          .filter(Boolean)
-          .join(" · ")}
-        backHref="/"
-        backLabel="Campaigns"
-        action={
-          <>
-            <DeleteCampaignButton campaignId={campaignId} campaignName={campaign.name} />
-            <Button asChild variant="outline" size="icon">
-              <Link href={`/campaigns/${campaignId}/search`} aria-label="Search">
-                <Search className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href={`/campaigns/${campaignId}/sessions/new`}>
-                <Plus className="h-4 w-4 mr-1" /> Log session
-              </Link>
-            </Button>
-          </>
-        }
-      />
-      <MetaStrip
-        items={[
-          campaign.system || null,
-          `${sessions.length} session${sessions.length === 1 ? "" : "s"}`,
-          `${openThreads.length} open thread${openThreads.length === 1 ? "" : "s"}`,
-          `${npcs.length} NPC${npcs.length === 1 ? "" : "s"}`,
-          `${playerCount} player${playerCount === 1 ? "" : "s"}`,
-          `${locationCount} location${locationCount === 1 ? "" : "s"}`,
-        ]}
-      />
+    <div className="min-h-screen px-6 py-8">
+      <div className="mx-auto grid w-full max-w-[1500px] gap-6 lg:grid-cols-[240px_1fr_320px]">
+        <div className="pr-4">
+          <CampaignWorkspaceSidebar campaignId={campaignId} />
+        </div>
 
-      <SectionFrame
-        title="Sessions"
-        eyebrow="Timeline"
-        description="Reverse-chronological session history with the recap and tags you will actually need before the next game."
-      >
-        {sessions.length === 0 ? (
-          <EmptyState
-            title="No sessions yet"
-            description="Log your first session to get started."
-            actionLabel="Log session"
-            actionHref={`/campaigns/${campaignId}/sessions/new`}
-          />
-        ) : (
-          <StackedList>
-            {sessions.map((session, i) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                campaignId={campaignId}
-                index={sessions.length - i}
-              />
+        <main className="space-y-10">
+          <Panel className="rounded-xl p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3">
+                <Link
+                  href="/app/dashboard"
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  ← Campaigns
+                </Link>
+                <div className="space-y-1">
+                  <h1 className="font-serif text-4xl tracking-[-0.02em] text-foreground">
+                    {campaign.name}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {campaign.system ? `${campaign.system} Campaign` : "Campaign"}
+                  </p>
+                </div>
+                <p className="text-sm text-foreground/80">
+                  Players:{" "}
+                  {campaign.participants.length > 0
+                    ? campaign.participants.join(" • ")
+                    : "No players yet"}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <InviteLinkButton campaignId={campaignId} inviteToken={campaign.invite_token} />
+                <DeleteCampaignButton campaignId={campaignId} campaignName={campaign.name} />
+                <SecondaryButton asChild size="icon">
+                  <Link href={`/campaigns/${campaignId}/search`} aria-label="Search">
+                    <Search className="h-4 w-4" />
+                  </Link>
+                </SecondaryButton>
+                <PrimaryButton asChild>
+                  <Link href={`/campaigns/${campaignId}/sessions/new`}>
+                    <Plus className="mr-1 h-4 w-4" /> Log Session
+                  </Link>
+                </PrimaryButton>
+              </div>
+            </div>
+          </Panel>
+
+          <section className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {[
+              { label: "Sessions", value: sessions.length },
+              { label: "Open Threads", value: openThreads.length },
+              { label: "NPCs", value: npcs.length },
+              { label: "Players", value: playerCount },
+              { label: "Locations", value: locationCount },
+            ].map((stat) => (
+              <StatTile key={stat.label} label={stat.label} value={stat.value} />
             ))}
-          </StackedList>
-        )}
-      </SectionFrame>
+          </section>
 
-      <SectionFrame
-        title="Open Threads"
-        eyebrow="Continuity"
-        description="Unresolved hooks stay visible here so the campaign never loses momentum."
-        tone="inset"
-      >
-        {openThreads.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No open threads.</p>
-        ) : (
-          <ThreadList threads={openThreads} campaignId={campaignId} />
-        )}
-      </SectionFrame>
+          <Panel className="rounded-xl p-6">
+            <div className="mb-5">
+              <SectionHeader label="Timeline" title="Sessions" />
+            </div>
+            {sessions.length === 0 ? (
+              <div className="rounded-md bg-muted/40 p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No sessions yet. Log your first session to get started.
+                </p>
+                <PrimaryButton asChild className="mt-4">
+                  <Link href={`/campaigns/${campaignId}/sessions/new`}>Log session</Link>
+                </PrimaryButton>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessions.map((session, i) => (
+                  <TimelineItem
+                    key={session.id}
+                    href={`/campaigns/${campaignId}/sessions/${session.id}`}
+                    index={sessions.length - i}
+                    title={session.title || "Untitled session"}
+                    date={formatDateShort(session.date)}
+                    tags={session.tags}
+                  />
+                ))}
+              </div>
+            )}
+          </Panel>
+        </main>
 
-      <SectionFrame
-        title="NPCs"
-        eyebrow="Cast"
-        description="Recent names, dispositions, and last mention dates at a glance."
-        action={npcs.length > 0 ? (
-          <Link
-            href={`/campaigns/${campaignId}/npcs`}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            View all
-          </Link>
-        ) : undefined}
-      >
-        {npcs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No NPCs recorded yet.</p>
-        ) : (
-          <NpcIndex npcs={npcs} campaignId={campaignId} />
-        )}
-      </SectionFrame>
+        <aside className="space-y-10">
+          <Panel className="rounded-xl p-4">
+            <div className="mb-4">
+              <SectionHeader label="Context" title="Open Threads" />
+            </div>
+            {openThreads.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No open threads.</p>
+            ) : (
+              <div className="space-y-1">
+                {openThreads.map((thread) => (
+                  <div key={thread.id} className="rounded-md hover:bg-muted/50 transition-colors">
+                    <ThreadItem thread={thread} campaignId={campaignId} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
 
-      <SectionFrame
-        title="Locations"
-        eyebrow="World State"
-        tone="inset"
-        action={
-          <Link
-            href={`/campaigns/${campaignId}/locations`}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {locationCount === 0 ? "Add locations" : `${locationCount} location${locationCount === 1 ? "" : "s"}`}
-          </Link>
-        }
-      >
-        {locationCount === 0 ? (
-          <p className="text-sm text-muted-foreground">No locations recorded yet. Add locations by listing them in session notes.</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {locationCount} location{locationCount === 1 ? "" : "s"} discovered.{" "}
-            <Link href={`/campaigns/${campaignId}/locations`} className="underline underline-offset-2 hover:text-foreground transition-colors">
-              View all →
-            </Link>
-          </p>
-        )}
-      </SectionFrame>
+          <Panel className="rounded-xl p-4">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h3 className="font-serif text-lg text-foreground">NPCs</h3>
+              <Link
+                href={`/campaigns/${campaignId}/npcs`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                View all
+              </Link>
+            </div>
+            {npcs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No NPCs recorded yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {npcs.slice(0, 6).map((npc) => (
+                  <Link
+                    key={npc.id}
+                    href={`/campaigns/${campaignId}/npcs/${npc.id}`}
+                    className="flex items-center justify-between gap-3 rounded-md border border-border/50 bg-muted/30 px-3 py-2 transition hover:border-primary/40"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Portrait src={npc.portrait_url} alt={npc.name} className="h-8 w-8" />
+                      <p className="truncate text-sm text-foreground">{npc.name}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDateShort(npc.last_mentioned)}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Panel>
 
-      <SectionFrame
-        title="Players"
-        eyebrow="Roster"
-        tone="inset"
-        action={
-          <Link
-            href={`/campaigns/${campaignId}/players`}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {playerCount === 0 ? "Add players" : `${playerCount} player${playerCount === 1 ? "" : "s"}`}
-          </Link>
-        }
-      >
-        {playerCount === 0 ? (
-          <p className="text-sm text-muted-foreground">No players added yet.</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {playerCount} player{playerCount === 1 ? "" : "s"} in the roster.{" "}
-            <Link href={`/campaigns/${campaignId}/players`} className="underline underline-offset-2 hover:text-foreground transition-colors">
-              View roster →
-            </Link>
-          </p>
-        )}
-      </SectionFrame>
+          <Panel className="rounded-xl p-4">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h3 className="font-serif text-lg text-foreground">Locations</h3>
+              <Link
+                href={`/campaigns/${campaignId}/locations`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Open
+              </Link>
+            </div>
+            {locationCount === 0 ? (
+              <p className="text-sm text-muted-foreground">No locations recorded yet.</p>
+            ) : (
+              <p className="text-sm text-foreground/80">
+                {locationCount} location{locationCount === 1 ? "" : "s"} tracked for this campaign.
+              </p>
+            )}
+          </Panel>
+        </aside>
+      </div>
     </div>
   );
 }

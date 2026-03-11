@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "bun test",
+    "migrate:npc-classes": "bun run scripts/migrate-npc-classes.ts",
     "db:types": "bunx supabase gen types typescript --local > src/lib/supabase/types.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-rekognition": "^3.1005.0",
     "@aws-sdk/client-s3": "^3.935.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

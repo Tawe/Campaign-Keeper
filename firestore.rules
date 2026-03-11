@@ -1,25 +1,132 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Authenticated owner has full access to their documents
+
+    // Helper: check if the requesting user is a player-member of a campaign
+    function isPlayerInCampaign(campaignId) {
+      return request.auth != null &&
+        request.auth.uid in
+          get(/databases/$(database)/documents/campaigns/$(campaignId)).data.playerUserIds;
+    }
+
+    // Campaigns: DM owns, or player is in playerUserIds
     match /campaigns/{id} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid in resource.data.playerUserIds
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
+
+    // Sessions: DM owns, or player is in campaign (app layer omits privateNotes for players)
     match /sessions/{id} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isPlayerInCampaign(resource.data.campaignId)
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
+
     match /threads/{id} {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
+
     match /npcs/{id} {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
+
+    // Campaign NPCs: DM owns, or player is in campaign (app layer omits privateNotes for players)
+    match /campaign_npcs/{id} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isPlayerInCampaign(resource.data.campaignId)
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
     match /npc_mentions/{id} {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /locations/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Campaign locations: DM owns, or player is in campaign
+    match /campaign_locations/{id} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isPlayerInCampaign(resource.data.campaignId)
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /location_visits/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Players: DM owns, or the player themselves (via playerUserId)
+    match /players/{id} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.playerUserId
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && (
+        request.auth.uid == request.resource.data.userId ||
+        request.auth.uid == request.resource.data.playerUserId
+      );
+    }
+
+    // Factions (global library): DM only
+    match /factions/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Campaign factions: DM owns, or player is in campaign
+    match /campaign_factions/{id} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isPlayerInCampaign(resource.data.campaignId)
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /poll_responses/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Calendars: one doc per campaign (doc ID = campaignId), DM only
+    match /calendars/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Events (global library): DM only
+    match /events/{id} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Campaign events: DM owns, or player is in campaign
+    match /campaign_events/{id} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        isPlayerInCampaign(resource.data.campaignId)
+      );
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }

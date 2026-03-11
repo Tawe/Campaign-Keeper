@@ -47,7 +47,17 @@ export default function AuthCallbackPage() {
 
         if (!res.ok) throw new Error("Failed to create session");
 
-        router.replace("/");
+        // Check for a pending campaign join (set by /join/[campaignId] page)
+        const joinCampaignId = sessionStorage.getItem("joinCampaignId");
+        const joinToken = sessionStorage.getItem("joinToken");
+        if (joinCampaignId && joinToken) {
+          sessionStorage.removeItem("joinCampaignId");
+          sessionStorage.removeItem("joinToken");
+          router.replace(`/join/${joinCampaignId}?token=${joinToken}`);
+          return;
+        }
+
+        router.replace("/app/dashboard");
       } catch (err: unknown) {
         setError((err as { message?: string }).message ?? "Sign-in failed");
       }
@@ -62,7 +72,7 @@ export default function AuthCallbackPage() {
         <div className="text-center space-y-3">
           <p className="text-destructive font-medium">Sign-in failed</p>
           <p className="text-sm text-muted-foreground">{error}</p>
-          <a href="/auth/login" className="text-sm underline">
+          <a href="/login" className="text-sm underline">
             Try again
           </a>
         </div>
