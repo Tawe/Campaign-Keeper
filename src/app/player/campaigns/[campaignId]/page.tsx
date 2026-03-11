@@ -1,10 +1,7 @@
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
-import { getCampaignPublic } from "@/domains/campaigns/queries";
 import { adminDb } from "@/lib/firebase/admin";
 import { PLAYERS_COL } from "@/lib/firebase/db";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { Panel } from "@/components/ui/panel";
 
 export default async function PlayerCampaignPage({
@@ -16,10 +13,6 @@ export default async function PlayerCampaignPage({
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const campaign = await getCampaignPublic(campaignId);
-  if (!campaign) notFound();
-  if (!campaign.player_user_ids.includes(user.uid)) notFound();
-
   // Get this player's record
   const playerSnap = await adminDb()
     .collection(PLAYERS_COL)
@@ -28,34 +21,26 @@ export default async function PlayerCampaignPage({
     .limit(1)
     .get();
 
-  const playerName = playerSnap.empty
-    ? null
-    : (playerSnap.docs[0].data().name as string);
+  const playerDoc = playerSnap.empty ? null : playerSnap.docs[0].data();
+  const playerName = playerDoc?.name as string | null ?? null;
+  const characters = (playerDoc?.characters ?? []) as { name: string }[];
 
   return (
-    <div className="page-shell max-w-2xl space-y-8">
-      <PageHeader
-        title={campaign.name}
-        eyebrow="Campaign"
-        backHref="/app/dashboard"
-        backLabel="Dashboard"
-      />
-
-      <Panel className="space-y-4 px-6 py-6">
-        {campaign.system && (
-          <p className="text-sm text-muted-foreground">
-            System: <span className="text-foreground">{campaign.system}</span>
-          </p>
-        )}
-        {playerName && (
-          <p className="text-sm text-muted-foreground">
-            Playing as: <span className="text-foreground font-medium">{playerName}</span>
-          </p>
-        )}
+    <Panel className="space-y-3 px-6 py-6">
+      {playerName && (
         <p className="text-sm text-muted-foreground">
-          You are a player in this campaign.
+          Playing as: <span className="text-foreground font-medium">{playerName}</span>
         </p>
-      </Panel>
-    </div>
+      )}
+      {characters.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          <span>Characters: </span>
+          <span className="text-foreground">{characters.map((c) => c.name).join(", ")}</span>
+        </div>
+      )}
+      <p className="text-sm text-muted-foreground">
+        Welcome to the campaign. Use the tabs above to browse sessions, NPCs, locations, factions, and the calendar.
+      </p>
+    </Panel>
   );
 }
