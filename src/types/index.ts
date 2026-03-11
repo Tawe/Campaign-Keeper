@@ -229,6 +229,7 @@ export interface Calendar {
   campaign_id: string;
   name: string;
   year_label: string;
+  start_year: number | null;
   months: CalendarMonth[];
   weekdays: string[];
   created_at: string;

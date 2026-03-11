@@ -12,6 +12,7 @@ export async function saveCalendar(
   input: {
     name: string;
     yearLabel: string;
+    startYear: number | null;
     months: CalendarMonth[];
     weekdays: string[];
   },
@@ -37,6 +38,7 @@ export async function saveCalendar(
     userId: user.uid,
     name,
     yearLabel: input.yearLabel.trim(),
+    ...(input.startYear !== null && { startYear: input.startYear }),
     months: input.months.map((m) => ({ name: m.name.trim(), days: m.days })),
     weekdays: input.weekdays.map((w) => w.trim()).filter(Boolean),
     updatedAt: now,

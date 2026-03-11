@@ -244,6 +244,7 @@ export interface CalendarDoc {
   userId: string;
   name: string;       // e.g. "Calendar of Harptos"
   yearLabel: string;  // e.g. "DR"
+  startYear?: number; // e.g. 1492
   months: { name: string; days: number }[];
   weekdays: string[];
   createdAt: FirebaseFirestore.Timestamp;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { saveCalendar } from "@/domains/calendars/actions";
 import { MonthEditor } from "./MonthEditor";
@@ -27,6 +27,9 @@ const labelBase = "block text-xs font-medium text-muted-foreground mb-1";
 export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCancel }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [yearLabel, setYearLabel] = useState(initial?.year_label ?? "");
+  const [startYear, setStartYear] = useState<string>(
+    initial?.start_year != null ? String(initial.start_year) : ""
+  );
   const [months, setMonths] = useState<CalendarMonth[]>(
     initial?.months ?? [{ name: "", days: 30 }]
   );
@@ -39,6 +42,7 @@ export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCance
   function applyImport(calendar: Calendar) {
     setName(calendar.name);
     setYearLabel(calendar.year_label);
+    setStartYear(calendar.start_year != null ? String(calendar.start_year) : "");
     setMonths(calendar.months);
     setWeekdays(calendar.weekdays);
     setShowImport(false);
@@ -46,6 +50,15 @@ export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCance
 
   function updateWeekday(i: number, value: string) {
     setWeekdays((prev) => prev.map((w, idx) => (idx === i ? value : w)));
+  }
+
+  function moveWeekday(i: number, dir: -1 | 1) {
+    setWeekdays((prev) => {
+      const next = [...prev];
+      const j = i + dir;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
   }
 
   function removeWeekday(i: number) {
@@ -59,9 +72,11 @@ export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCance
   function handleSave() {
     startTransition(async () => {
       try {
+        const parsed = startYear.trim() ? parseInt(startYear, 10) : null;
         await saveCalendar(campaignId, {
           name,
           yearLabel,
+          startYear: parsed,
           months,
           weekdays: weekdays.filter(Boolean),
         });
@@ -129,6 +144,16 @@ export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCance
             className={inputBase}
           />
         </div>
+        <div>
+          <label className={labelBase}>Campaign start year</label>
+          <input
+            type="number"
+            value={startYear}
+            onChange={(e) => setStartYear(e.target.value)}
+            placeholder="1492"
+            className={inputBase}
+          />
+        </div>
       </div>
 
       <div>
@@ -143,6 +168,26 @@ export function CalendarSetupForm({ campaignId, initial, otherCampaigns, onCance
         <div className="space-y-1.5">
           {weekdays.map((w, i) => (
             <div key={i} className="flex items-center gap-2">
+              <div className="flex flex-col">
+                <button
+                  type="button"
+                  onClick={() => moveWeekday(i, -1)}
+                  disabled={i === 0}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+                  aria-label="Move up"
+                >
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveWeekday(i, 1)}
+                  disabled={i === weekdays.length - 1}
+                  className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+                  aria-label="Move down"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <input
                 type="text"
                 value={w}

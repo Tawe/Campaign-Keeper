@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronUp, ChevronDown } from "lucide-react";
 import type { CalendarMonth } from "@/types";
 
 interface Props {
@@ -22,6 +22,13 @@ export function MonthEditor({ months, onChange }: Props) {
     );
   }
 
+  function move(i: number, dir: -1 | 1) {
+    const next = [...months];
+    const j = i + dir;
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  }
+
   function remove(i: number) {
     onChange(months.filter((_, idx) => idx !== i));
   }
@@ -34,6 +41,26 @@ export function MonthEditor({ months, onChange }: Props) {
     <div className="space-y-1.5">
       {months.map((m, i) => (
         <div key={i} className="flex items-center gap-2">
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => move(i, -1)}
+              disabled={i === 0}
+              className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label="Move up"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => move(i, 1)}
+              disabled={i === months.length - 1}
+              className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"
+              aria-label="Move down"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <input
             type="text"
             value={m.name}

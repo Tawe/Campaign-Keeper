@@ -329,6 +329,7 @@ export function toCalendar(doc: DocumentSnapshot): Calendar {
     campaign_id: d.campaignId,
     name: d.name,
     year_label: d.yearLabel ?? "",
+    start_year: typeof d.startYear === "number" ? d.startYear : null,
     months: Array.isArray(d.months)
       ? d.months.map((m: { name: string; days: number }) => ({ name: m.name, days: m.days }))
       : [],
