@@ -8,15 +8,19 @@ interface CampaignWorkspaceSidebarProps {
 }
 
 const navItems = [
-  { label: "Campaign", href: (campaignId: string) => `/campaigns/${campaignId}` },
-  { label: "Sessions", href: (campaignId: string) => `/campaigns/${campaignId}/sessions/new` },
-  { label: "Calendar", href: (campaignId: string) => `/campaigns/${campaignId}/calendar` },
-  { label: "NPCs", href: (campaignId: string) => `/campaigns/${campaignId}/npcs` },
-  { label: "Players", href: (campaignId: string) => `/campaigns/${campaignId}/players` },
-  { label: "Locations", href: (campaignId: string) => `/campaigns/${campaignId}/locations` },
-  { label: "Factions", href: (campaignId: string) => `/campaigns/${campaignId}/factions` },
-  { label: "Events", href: (campaignId: string) => `/campaigns/${campaignId}/events` },
-  { label: "Search", href: (campaignId: string) => `/campaigns/${campaignId}/search` },
+  { label: "Campaign", href: (id: string) => `/campaigns/${id}`, exact: true },
+  {
+    label: "Sessions",
+    href: (id: string) => `/campaigns/${id}/sessions/new`,
+    activePrefix: (id: string) => `/campaigns/${id}/sessions`,
+  },
+  { label: "Calendar", href: (id: string) => `/campaigns/${id}/calendar` },
+  { label: "NPCs", href: (id: string) => `/campaigns/${id}/npcs` },
+  { label: "Players", href: (id: string) => `/campaigns/${id}/players` },
+  { label: "Locations", href: (id: string) => `/campaigns/${id}/locations` },
+  { label: "Factions", href: (id: string) => `/campaigns/${id}/factions` },
+  { label: "Events", href: (id: string) => `/campaigns/${id}/events` },
+  { label: "Search", href: (id: string) => `/campaigns/${id}/search` },
 ];
 
 export function CampaignWorkspaceSidebar({ campaignId }: CampaignWorkspaceSidebarProps) {
@@ -28,7 +32,8 @@ export function CampaignWorkspaceSidebar({ campaignId }: CampaignWorkspaceSideba
       <nav className="space-y-1">
         {navItems.map((item) => {
           const href = item.href(campaignId);
-          const active = pathname === href;
+          const matchPath = item.activePrefix ? item.activePrefix(campaignId) : href;
+          const active = item.exact ? pathname === href : pathname.startsWith(matchPath);
           return (
             <SidebarNavItem
               key={item.label}

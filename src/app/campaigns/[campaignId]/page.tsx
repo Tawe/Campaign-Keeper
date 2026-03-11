@@ -9,7 +9,6 @@ import { getCampaignPlayers } from "@/domains/players/queries";
 import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
-import { CampaignWorkspaceSidebar } from "@/domains/campaigns/components/CampaignWorkspaceSidebar";
 import { Portrait } from "@/components/shared/Portrait";
 import { Panel } from "@/components/ui/panel";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -45,12 +44,8 @@ export default async function CampaignDashboardPage({
   const npcs = await getCampaignNpcIndex(campaignId, sessionIds, sessions);
 
   return (
-    <div className="min-h-screen px-6 py-8">
-      <div className="mx-auto grid w-full max-w-[1500px] gap-6 lg:grid-cols-[240px_1fr_320px]">
-        <div className="pr-4">
-          <CampaignWorkspaceSidebar campaignId={campaignId} />
-        </div>
-
+    <div className="px-6 py-8">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <main className="space-y-10">
           <Panel className="rounded-xl p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -248,4 +243,5 @@ export default async function CampaignDashboardPage({
       </div>
     </div>
   );
+
 }
