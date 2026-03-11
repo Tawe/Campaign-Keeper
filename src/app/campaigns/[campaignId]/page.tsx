@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/firebase/session";
 import { getCampaign, getCampaignCounts, getCampaignNpcIndex } from "@/domains/campaigns/queries";
 import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignThreads } from "@/domains/threads/queries";
+import { getCampaignPlayers } from "@/domains/players/queries";
 import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
@@ -30,10 +31,11 @@ export default async function CampaignDashboardPage({
   const campaign = await getCampaign(campaignId, user.uid);
   if (!campaign) notFound();
 
-  const [sessions, threads, counts] = await Promise.all([
+  const [sessions, threads, counts, players] = await Promise.all([
     getCampaignSessions(campaignId),
     getCampaignThreads(campaignId),
     getCampaignCounts(campaignId),
+    getCampaignPlayers(campaignId),
   ]);
 
   const openThreads = threads.filter((t) => t.status === "open");
@@ -140,6 +142,52 @@ export default async function CampaignDashboardPage({
                   <div key={thread.id} className="rounded-md hover:bg-muted/50 transition-colors">
                     <ThreadItem thread={thread} campaignId={campaignId} />
                   </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel className="rounded-xl p-4">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h3 className="font-serif text-lg text-foreground">Players</h3>
+              <Link
+                href={`/campaigns/${campaignId}/players`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Manage
+              </Link>
+            </div>
+            {players.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No players yet. Share the invite link to get started.</p>
+            ) : (
+              <div className="space-y-3">
+                {players.map((player) => (
+                  <Link
+                    key={player.id}
+                    href={`/campaigns/${campaignId}/players/${player.id}`}
+                    className="block rounded-md border border-border/50 bg-muted/30 px-3 py-2 transition hover:border-primary/40"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{player.name}</span>
+                      {player.player_user_id && (
+                        <span className="shrink-0 text-xs text-muted-foreground">joined</span>
+                      )}
+                    </div>
+                    {player.characters.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {player.characters.map((c) => (
+                          <p key={c.name} className="text-xs text-muted-foreground truncate">
+                            {c.name}
+                            {(c.class || c.level) && (
+                              <span className="ml-1 opacity-70">
+                                — {[c.class, c.level ? `Lvl ${c.level}` : null].filter(Boolean).join(" ")}
+                              </span>
+                            )}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
                 ))}
               </div>
             )}
