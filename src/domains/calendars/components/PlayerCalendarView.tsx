@@ -2,24 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CalendarSetupForm } from "./CalendarSetupForm";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CalendarMonthGrid } from "./CalendarMonthGrid";
 import type { Calendar, CampaignEvent, Session } from "@/types";
-
-interface OtherCampaign {
-  campaignId: string;
-  campaignName: string;
-  calendar: Calendar;
-}
 
 interface Props {
   campaignId: string;
   calendar: Calendar;
   sessions: Session[];
   events: CampaignEvent[];
-  otherCampaigns: OtherCampaign[];
 }
 
 function getStartOffset(
@@ -38,9 +29,7 @@ function getStartOffset(
   return ((totalDays % numWeekdays) + numWeekdays) % numWeekdays;
 }
 
-export function CalendarView({ campaignId, calendar, sessions, events, otherCampaigns }: Props) {
-  const [editing, setEditing] = useState(false);
-
+export function PlayerCalendarView({ campaignId, calendar, sessions, events }: Props) {
   const datedSessions = sessions.filter((s) => s.in_game_date !== null);
   const undatedSessions = sessions.filter((s) => s.in_game_date === null);
   const datedEvents = events.filter((e) => e.start_date !== null);
@@ -55,17 +44,6 @@ export function CalendarView({ campaignId, calendar, sessions, events, otherCamp
   const sortedYears = [...allYears].sort((a, b) => a - b);
   const defaultYear = sortedYears[sortedYears.length - 1] ?? null;
   const [selectedYear, setSelectedYear] = useState<number | null>(defaultYear);
-
-  if (editing) {
-    return (
-      <CalendarSetupForm
-        campaignId={campaignId}
-        initial={calendar}
-        otherCampaigns={otherCampaigns}
-        onCancel={() => setEditing(false)}
-      />
-    );
-  }
 
   const yearIdx = selectedYear != null ? sortedYears.indexOf(selectedYear) : -1;
   const prevYear = yearIdx > 0 ? sortedYears[yearIdx - 1] : null;
@@ -83,26 +61,12 @@ export function CalendarView({ campaignId, calendar, sessions, events, otherCamp
   return (
     <div className="space-y-6">
       {/* Calendar header */}
-      <div className="paper-panel px-5 py-4 sm:px-6 space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="ds-section-header">Calendar</p>
-            <h1 className="ink-title text-3xl sm:text-[2.4rem]">{calendar.name}</h1>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => setEditing(true)} className="shrink-0">
-            <Pencil className="h-4 w-4 mr-1.5" />
-            Edit
-          </Button>
-        </div>
+      <div className="paper-panel px-5 py-4 sm:px-6 space-y-2">
+        <p className="ds-section-header">Calendar</p>
+        <h2 className="ink-title text-2xl">{calendar.name}</h2>
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
           <span>{calendar.months.length} months</span>
           {calendar.year_label && <span>{calendar.year_label}</span>}
-          {calendar.start_year != null && (
-            <span>
-              starts {calendar.start_year}
-              {calendar.year_label ? ` ${calendar.year_label}` : ""}
-            </span>
-          )}
           {calendar.weekdays.length > 0 && (
             <span>{calendar.weekdays.join(" · ")}</span>
           )}
@@ -148,8 +112,7 @@ export function CalendarView({ campaignId, calendar, sessions, events, otherCamp
                 startOffset={getStartOffset(monthIdx, selectedYear, calendar)}
                 sessions={yearSessions.filter((s) => s.in_game_date!.month === monthIdx)}
                 events={yearEvents.filter((e) => e.start_date!.month === monthIdx)}
-                sessionHref={(id) => `/campaigns/${campaignId}/sessions/${id}`}
-                eventHref={(id) => `/campaigns/${campaignId}/events/${id}`}
+                sessionHref={(id) => `/player/campaigns/${campaignId}/sessions/${id}`}
               />
             );
           })}
@@ -167,31 +130,24 @@ export function CalendarView({ campaignId, calendar, sessions, events, otherCamp
         <div className="space-y-2">
           <h2 className="font-serif text-lg text-muted-foreground">Undated</h2>
           <div className="paper-panel px-5 py-4 sm:px-6 space-y-2">
-            {undatedSessions.map((session) => (
+            {undatedSessions.map((s) => (
               <Link
-                key={session.id}
-                href={`/campaigns/${campaignId}/sessions/${session.id}`}
+                key={s.id}
+                href={`/player/campaigns/${campaignId}/sessions/${s.id}`}
                 className="flex items-baseline gap-3 hover:opacity-80 transition-opacity"
               >
-                <span className="text-xs text-muted-foreground w-24 shrink-0">
-                  {session.date}
-                </span>
-                <span className="text-sm text-foreground">
-                  {session.title ?? "Untitled session"}
-                </span>
+                <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">—</span>
+                <span className="text-sm text-foreground">{s.title ?? s.date}</span>
               </Link>
             ))}
-            {undatedEvents.map((event) => (
-              <Link
-                key={event.id}
-                href={`/campaigns/${campaignId}/events/${event.id}`}
-                className="flex items-baseline gap-3 hover:opacity-80 transition-opacity"
-              >
-                <span className="text-xs text-muted-foreground w-24 shrink-0 flex items-center gap-1">
-                  <span>◆</span> Event
+            {undatedEvents.map((e) => (
+              <div key={e.id} className="flex items-baseline gap-3">
+                <span className="text-xs font-medium text-muted-foreground w-12 shrink-0">—</span>
+                <span className="text-sm text-foreground flex items-center gap-1.5">
+                  <span className="text-muted-foreground">◆</span>
+                  {e.title}
                 </span>
-                <span className="text-sm text-foreground">{event.title}</span>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
