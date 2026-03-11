@@ -19,6 +19,8 @@ export const CAMPAIGN_FACTIONS_COL = "campaign_factions";
 export const CALENDARS_COL = "calendars";
 export const EVENTS_COL = "events";
 export const CAMPAIGN_EVENTS_COL = "campaign_events";
+export const SCHEDULED_SESSIONS_COL = "scheduled_sessions";
+export const ATTENDANCE_COL = "attendance";
 
 // Firestore document shapes (snake_case fields to match existing app types)
 
@@ -29,6 +31,8 @@ export interface CampaignDoc {
   participants: string[];
   inviteToken: string;
   playerUserIds: string[];
+  scheduleCadence: string | null;
+  reminderDaysBefore: number | null;
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;
 }
@@ -265,4 +269,33 @@ export interface NpcMentionDoc {
   npcName: string;
   npcDisposition: "ally" | "enemy" | "neutral" | "unknown" | null;
   createdAt: FirebaseFirestore.Timestamp;
+}
+
+export interface ScheduledSessionDoc {
+  campaignId: string;
+  userId: string;
+  date: string;                          // YYYY-MM-DD
+  time: string | null;                   // HH:MM display only
+  title: string | null;
+  notes: string | null;                  // included in invite email body
+  status: "upcoming" | "cancelled";
+  inviteEmailSentAt: FirebaseFirestore.Timestamp | null;
+  reminderEmailSentAt: FirebaseFirestore.Timestamp | null;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface AttendanceDoc {
+  scheduledSessionId: string;
+  campaignId: string;
+  userId: string;                        // DM's uid, for security rules
+  playerId: string;
+  playerName: string;                    // denormalized
+  playerEmail: string;                   // denormalized
+  rsvpToken: string;                     // UUID — public RSVP key
+  status: "pending" | "attending" | "not_attending" | "maybe";
+  message: string | null;
+  respondedAt: FirebaseFirestore.Timestamp | null;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
 }

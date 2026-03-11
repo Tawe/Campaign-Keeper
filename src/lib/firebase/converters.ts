@@ -3,7 +3,7 @@
  * Handles Timestamp → ISO string conversion.
  */
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import type { Calendar, CampaignEvent, Campaign, Session, Thread, Npc, NpcClass, NpcMention, Player, Location, Faction } from "@/types";
+import type { Attendance, Calendar, CampaignEvent, Campaign, ScheduledSession, Session, Thread, Npc, NpcClass, NpcMention, Player, Location, Faction } from "@/types";
 
 function ts(val: unknown): string {
   if (!val) return new Date().toISOString();
@@ -24,6 +24,8 @@ export function toCampaign(doc: DocumentSnapshot): Campaign {
     participants: d.participants ?? [],
     invite_token: d.inviteToken ?? "",
     player_user_ids: d.playerUserIds ?? [],
+    schedule_cadence: d.scheduleCadence ?? null,
+    reminder_days_before: typeof d.reminderDaysBefore === "number" ? d.reminderDaysBefore : null,
     created_at: ts(d.createdAt),
     updated_at: ts(d.updatedAt),
   };
@@ -342,6 +344,41 @@ export function toCalendar(doc: DocumentSnapshot): Calendar {
       ? d.months.map((m: { name: string; days: number }) => ({ name: m.name, days: m.days }))
       : [],
     weekdays: Array.isArray(d.weekdays) ? d.weekdays : [],
+    created_at: ts(d.createdAt),
+    updated_at: ts(d.updatedAt),
+  };
+}
+
+export function toScheduledSession(doc: DocumentSnapshot): ScheduledSession {
+  const d = doc.data()!;
+  return {
+    id: doc.id,
+    campaign_id: d.campaignId,
+    date: d.date,
+    time: d.time ?? null,
+    title: d.title ?? null,
+    notes: d.notes ?? null,
+    status: d.status ?? "upcoming",
+    invite_email_sent_at: d.inviteEmailSentAt ? ts(d.inviteEmailSentAt) : null,
+    reminder_email_sent_at: d.reminderEmailSentAt ? ts(d.reminderEmailSentAt) : null,
+    created_at: ts(d.createdAt),
+    updated_at: ts(d.updatedAt),
+  };
+}
+
+export function toAttendance(doc: DocumentSnapshot): Attendance {
+  const d = doc.data()!;
+  return {
+    id: doc.id,
+    scheduled_session_id: d.scheduledSessionId,
+    campaign_id: d.campaignId,
+    player_id: d.playerId,
+    player_name: d.playerName,
+    player_email: d.playerEmail,
+    rsvp_token: d.rsvpToken,
+    status: d.status ?? "pending",
+    message: d.message ?? null,
+    responded_at: d.respondedAt ? ts(d.respondedAt) : null,
     created_at: ts(d.createdAt),
     updated_at: ts(d.updatedAt),
   };

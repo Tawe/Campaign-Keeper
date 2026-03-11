@@ -15,6 +15,7 @@ const navItems = [
     activePrefix: (id: string) => `/campaigns/${id}/sessions`,
   },
   { label: "Calendar", href: (id: string) => `/campaigns/${id}/calendar` },
+  { label: "Schedule", href: (id: string) => `/campaigns/${id}/schedule` },
   { label: "NPCs", href: (id: string) => `/campaigns/${id}/npcs` },
   { label: "Players", href: (id: string) => `/campaigns/${id}/players` },
   { label: "Locations", href: (id: string) => `/campaigns/${id}/locations` },

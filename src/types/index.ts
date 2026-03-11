@@ -25,6 +25,8 @@ export interface Campaign {
   participants: string[];
   invite_token: string;
   player_user_ids: string[];
+  schedule_cadence: string | null;
+  reminder_days_before: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -260,4 +262,39 @@ export interface RecapContent {
   threads: RecapThread[];
   npcMentions: RecapNpcMention[];
   privateNotes?: string; // DM recap only
+}
+
+export type AttendanceStatus = "pending" | "attending" | "not_attending" | "maybe";
+
+export interface ScheduledSession {
+  id: string;
+  campaign_id: string;
+  date: string;                          // YYYY-MM-DD
+  time: string | null;                   // HH:MM display
+  title: string | null;
+  notes: string | null;
+  status: "upcoming" | "cancelled";
+  invite_email_sent_at: string | null;   // ISO string
+  reminder_email_sent_at: string | null; // ISO string
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Attendance {
+  id: string;
+  scheduled_session_id: string;
+  campaign_id: string;
+  player_id: string;
+  player_name: string;
+  player_email: string;
+  rsvp_token: string;
+  status: AttendanceStatus;
+  message: string | null;
+  responded_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledSessionWithAttendance extends ScheduledSession {
+  attendance: Attendance[];
 }
