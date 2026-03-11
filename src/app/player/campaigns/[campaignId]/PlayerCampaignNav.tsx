@@ -13,6 +13,8 @@ const navItems = [
   { label: "NPCs", href: (id: string) => `/player/campaigns/${id}/npcs` },
   { label: "Locations", href: (id: string) => `/player/campaigns/${id}/locations` },
   { label: "Factions", href: (id: string) => `/player/campaigns/${id}/factions` },
+  { label: "Events", href: (id: string) => `/player/campaigns/${id}/events` },
+  { label: "Players", href: (id: string) => `/player/campaigns/${id}/players` },
   { label: "Calendar", href: (id: string) => `/player/campaigns/${id}/calendar` },
 ];
 

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { User } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
@@ -37,7 +38,7 @@ export default async function PlayerNpcsPage({
         const identityParts = [npc.race, classDisplay].filter(Boolean) as string[];
 
         return (
-          <div key={npc.id} className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-border/80">
+          <Link key={npc.id} href={`/player/campaigns/${campaignId}/npcs/${npc.id}`} className="group relative block aspect-[3/4] overflow-hidden rounded-xl border border-border/80">
             {npc.portrait_url ? (
               <Image
                 src={npc.portrait_url}
@@ -91,7 +92,7 @@ export default async function PlayerNpcsPage({
                 </div>
               )}
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>

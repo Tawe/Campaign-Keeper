@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getCampaignFactions } from "@/domains/factions/queries";
 import { Panel } from "@/components/ui/panel";
@@ -22,7 +23,7 @@ export default async function PlayerFactionsPage({
   return (
     <Panel className="divide-y divide-border overflow-hidden">
       {factions.map((faction) => (
-        <div key={faction.id} className="flex items-start gap-3 px-4 py-3 sm:px-5">
+        <Link key={faction.id} href={`/player/campaigns/${campaignId}/factions/${faction.id}`} className="flex items-start gap-3 px-4 py-3 sm:px-5 hover:bg-accent/45 transition-colors">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-sm">{faction.name}</span>
@@ -49,7 +50,7 @@ export default async function PlayerFactionsPage({
           {faction.influence && (
             <span className="shrink-0 text-xs text-muted-foreground">{faction.influence}</span>
           )}
-        </div>
+        </Link>
       ))}
     </Panel>
   );

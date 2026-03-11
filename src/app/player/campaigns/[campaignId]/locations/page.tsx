@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getCampaignLocations } from "@/domains/locations/queries";
@@ -24,7 +25,7 @@ export default async function PlayerLocationsPage({
   return (
     <Panel className="divide-y divide-border overflow-hidden">
       {locations.map((location) => (
-        <div key={location.id} className="flex items-start gap-3 px-4 py-3 sm:px-5">
+        <Link key={location.id} href={`/player/campaigns/${campaignId}/locations/${location.id}`} className="flex items-start gap-3 px-4 py-3 sm:px-5 hover:bg-accent/45 transition-colors">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <p className="font-medium text-sm">{location.name}</p>
@@ -46,7 +47,7 @@ export default async function PlayerLocationsPage({
               {formatDateShort(location.last_visited)}
             </span>
           )}
-        </div>
+        </Link>
       ))}
     </Panel>
   );
