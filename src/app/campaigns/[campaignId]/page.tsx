@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
-import { getCampaign, getCampaignCounts, getCampaignNpcIndex } from "@/domains/campaigns/queries";
+import { getCampaign, getCampaignCounts } from "@/domains/campaigns/queries";
+import { getCampaignNpcsWithMentions } from "@/domains/npcs/queries";
 import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignThreads } from "@/domains/threads/queries";
 import { getCampaignPlayers } from "@/domains/players/queries";
@@ -30,18 +31,16 @@ export default async function CampaignDashboardPage({
   const campaign = await getCampaign(campaignId, user.uid);
   if (!campaign) notFound();
 
-  const [sessions, threads, counts, players] = await Promise.all([
+  const [sessions, threads, counts, players, npcs] = await Promise.all([
     getCampaignSessions(campaignId),
     getCampaignThreads(campaignId),
     getCampaignCounts(campaignId),
     getCampaignPlayers(campaignId),
+    getCampaignNpcsWithMentions(campaignId),
   ]);
 
   const openThreads = threads.filter((t) => t.status === "open");
   const { playerCount, locationCount } = counts;
-
-  const sessionIds = sessions.map((s) => s.id);
-  const npcs = await getCampaignNpcIndex(campaignId, sessionIds, sessions);
 
   return (
     <div className="px-6 py-8">
@@ -212,9 +211,11 @@ export default async function CampaignDashboardPage({
                       <Portrait src={npc.portrait_url} alt={npc.name} className="h-8 w-8" />
                       <p className="truncate text-sm text-foreground">{npc.name}</p>
                     </div>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatDateShort(npc.last_mentioned)}
-                    </span>
+                    {npc.last_mentioned && (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDateShort(npc.last_mentioned)}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
