@@ -25,17 +25,6 @@ export function CampaignForm() {
         <Label htmlFor="system">System</Label>
         <Input id="system" name="system" placeholder="5e, PF2e, CoC…" />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="participants">Players</Label>
-        <Input
-          id="participants"
-          name="participants"
-          placeholder="Alice, Bob, Carol"
-        />
-        <p className="text-xs text-muted-foreground">
-          Comma-separated names — each becomes a player record. You can add characters after.
-        </p>
-      </div>
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Creating…" : "Create campaign"}
       </Button>

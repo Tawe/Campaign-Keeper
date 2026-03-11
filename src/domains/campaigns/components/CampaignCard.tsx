@@ -11,9 +11,9 @@ interface CampaignCardProps {
 
 export function CampaignCard({ campaign, lastSessionDate }: CampaignCardProps) {
   const participantLabel =
-    campaign.participants.length > 0
-      ? `${campaign.participants.length} player${campaign.participants.length === 1 ? "" : "s"}`
-      : "No roster yet";
+    campaign.player_user_ids.length > 0
+      ? `${campaign.player_user_ids.length} player${campaign.player_user_ids.length === 1 ? "" : "s"} joined`
+      : "No players yet";
 
   return (
     <Link href={`/campaigns/${campaign.id}`}>
@@ -31,9 +31,6 @@ export function CampaignCard({ campaign, lastSessionDate }: CampaignCardProps) {
             <p>{participantLabel}</p>
             <p>{lastSessionDate ? `Last session ${formatDateShort(lastSessionDate)}` : "No sessions yet"}</p>
           </div>
-          {campaign.participants.length > 0 && (
-            <p className="text-sm leading-6 ds-body">{campaign.participants.join(", ")}</p>
-          )}
         </div>
       </Card>
     </Link>

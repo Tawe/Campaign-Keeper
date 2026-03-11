@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { adminDb } from "@/lib/firebase/admin";
 import { PLAYERS_COL } from "@/lib/firebase/db";
-import { Panel } from "@/components/ui/panel";
+import { PlayerProfileEditor } from "@/domains/players/components/PlayerProfileEditor";
+import type { CharacterInput } from "@/domains/players/actions";
 
 export default async function PlayerCampaignPage({
   params,
@@ -13,7 +14,6 @@ export default async function PlayerCampaignPage({
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  // Get this player's record
   const playerSnap = await adminDb()
     .collection(PLAYERS_COL)
     .where("campaignId", "==", campaignId)
@@ -21,26 +21,43 @@ export default async function PlayerCampaignPage({
     .limit(1)
     .get();
 
-  const playerDoc = playerSnap.empty ? null : playerSnap.docs[0].data();
-  const playerName = playerDoc?.name as string | null ?? null;
-  const characters = (playerDoc?.characters ?? []) as { name: string }[];
+  if (playerSnap.empty) {
+    return (
+      <p className="text-sm text-muted-foreground py-4">
+        Player record not found. Try rejoining via the invite link.
+      </p>
+    );
+  }
+
+  const playerDoc = playerSnap.docs[0];
+  const data = playerDoc.data();
+  const playerName = (data.name as string) ?? "";
+  const characters = ((data.characters ?? []) as {
+    name: string;
+    class: string | null;
+    race: string | null;
+    level: number | null;
+    statsLink: string | null;
+  }[]).map<CharacterInput>((c) => ({
+    name: c.name,
+    class: c.class,
+    race: c.race,
+    level: c.level,
+    statsLink: c.statsLink,
+  }));
 
   return (
-    <Panel className="space-y-3 px-6 py-6">
-      {playerName && (
-        <p className="text-sm text-muted-foreground">
-          Playing as: <span className="text-foreground font-medium">{playerName}</span>
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-muted-foreground mb-1">
+          Update your display name and add your characters. The DM can see your characters in the campaign.
         </p>
-      )}
-      {characters.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          <span>Characters: </span>
-          <span className="text-foreground">{characters.map((c) => c.name).join(", ")}</span>
-        </div>
-      )}
-      <p className="text-sm text-muted-foreground">
-        Welcome to the campaign. Use the tabs above to browse sessions, NPCs, locations, factions, and the calendar.
-      </p>
-    </Panel>
+      </div>
+      <PlayerProfileEditor
+        playerId={playerDoc.id}
+        initialName={playerName}
+        initialCharacters={characters}
+      />
+    </div>
   );
 }

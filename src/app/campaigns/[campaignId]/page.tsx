@@ -67,12 +67,6 @@ export default async function CampaignDashboardPage({
                     {campaign.system ? `${campaign.system} Campaign` : "Campaign"}
                   </p>
                 </div>
-                <p className="text-sm text-foreground/80">
-                  Players:{" "}
-                  {campaign.participants.length > 0
-                    ? campaign.participants.join(" • ")
-                    : "No players yet"}
-                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <InviteLinkButton campaignId={campaignId} inviteToken={campaign.invite_token} />

@@ -93,6 +93,38 @@ export async function updatePlayer(playerId: string, input: PlayerInput) {
   redirect(`/campaigns/${input.campaignId}/players`);
 }
 
+/** Called by the player themselves to update their display name and characters. */
+export async function updateMyProfile(
+  playerId: string,
+  name: string,
+  characters: CharacterInput[]
+) {
+  const user = await requireUser();
+  const db = adminDb();
+  const doc = await db.collection(PLAYERS_COL).doc(playerId).get();
+  if (!doc.exists || doc.data()?.playerUserId !== user.uid) {
+    throw new Error("Not authorized");
+  }
+  const campaignId = doc.data()?.campaignId as string;
+
+  await db.collection(PLAYERS_COL).doc(playerId).update({
+    name: name.trim(),
+    characters: characters
+      .filter((c) => c.name.trim())
+      .map((c) => ({
+        name: c.name.trim(),
+        nameLower: c.name.trim().toLowerCase(),
+        class: c.class?.trim() || null,
+        race: c.race?.trim() || null,
+        level: c.level ?? null,
+        statsLink: c.statsLink?.trim() || null,
+      })),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/player/campaigns/${campaignId}`);
+}
+
 export async function deletePlayer(playerId: string, campaignId: string) {
   const { doc } = await requireOwnedDoc("player", playerId);
   const db = adminDb();
