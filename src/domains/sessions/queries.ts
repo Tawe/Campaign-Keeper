@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { adminDb } from "@/lib/firebase/admin";
 import { toSession, toThread } from "@/lib/firebase/converters";
 import {
@@ -8,7 +9,7 @@ import {
 } from "@/lib/firebase/db";
 import type { NpcMentionWithNpc, Npc, PollResponse, Session, Thread } from "@/types";
 
-export async function getCampaignSessions(campaignId: string): Promise<Session[]> {
+export const getCampaignSessions = cache(async (campaignId: string): Promise<Session[]> => {
   const db = adminDb();
   const snap = await db
     .collection(SESSIONS_COL)
@@ -16,7 +17,7 @@ export async function getCampaignSessions(campaignId: string): Promise<Session[]
     .orderBy("date", "desc")
     .get();
   return snap.docs.map(toSession);
-}
+});
 
 export async function getSession(sessionId: string): Promise<Session | null> {
   const db = adminDb();

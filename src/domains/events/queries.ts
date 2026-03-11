@@ -5,30 +5,14 @@ import type { CampaignEvent } from "@/types";
 
 export async function getCampaignEvents(campaignId: string): Promise<CampaignEvent[]> {
   const db = adminDb();
-  const [eventsSnap, campaignEventsSnap] = await Promise.all([
-    db.collection(EVENTS_COL).get(), // We'll filter below
-    db.collection(CAMPAIGN_EVENTS_COL).where("campaignId", "==", campaignId).orderBy("createdAt", "desc").get(),
-  ]);
+  const campaignEventsSnap = await db
+    .collection(CAMPAIGN_EVENTS_COL)
+    .where("campaignId", "==", campaignId)
+    .orderBy("createdAt", "desc")
+    .get();
 
-  const globalMap = new Map(eventsSnap.docs.map((doc) => [doc.id, doc]));
-
-  return campaignEventsSnap.docs
-    .map((doc) => {
-      const campaignEvent = toCampaignEvent(doc);
-      const globalDoc = globalMap.get(campaignEvent.id);
-      if (!globalDoc) return null;
-      const globalEvent = toEvent(globalDoc);
-      return {
-        ...campaignEvent,
-        title: globalEvent.title,
-        event_type: globalEvent.event_type,
-        start_date: globalEvent.start_date,
-        end_date: globalEvent.end_date,
-        description: globalEvent.description,
-        private_notes: globalEvent.private_notes,
-      };
-    })
-    .filter((e): e is CampaignEvent => e !== null);
+  if (campaignEventsSnap.empty) return [];
+  return enrichCampaignEvents(db, campaignEventsSnap.docs.map(toCampaignEvent));
 }
 
 export async function getEventWithCampaignData(
@@ -112,15 +96,19 @@ export async function getAvailableEvents(
     .map((d) => ({ id: d.id, title: d.data().title as string }));
 }
 
-/** Fetch global event docs to enrich a list of campaign event stubs. */
+/**
+ * Fetch global event docs to enrich a list of campaign event stubs.
+ * Uses db.getAll() to send a single batch RPC instead of N individual reads.
+ */
 async function enrichCampaignEvents(
   db: FirebaseFirestore.Firestore,
   campaignEvents: CampaignEvent[],
 ): Promise<CampaignEvent[]> {
   if (campaignEvents.length === 0) return [];
-  const globalDocs = await Promise.all(
-    campaignEvents.map((e) => db.collection(EVENTS_COL).doc(e.id).get())
-  );
+
+  const refs = campaignEvents.map((e) => db.collection(EVENTS_COL).doc(e.id));
+  const globalDocs = await db.getAll(...refs);
+
   return campaignEvents
     .map((ce, i) => {
       const globalDoc = globalDocs[i];

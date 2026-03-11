@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { randomUUID } from "crypto";
 import { adminDb } from "@/lib/firebase/admin";
 import { toCampaign, toSession } from "@/lib/firebase/converters";
@@ -24,14 +25,14 @@ export async function getCampaign(campaignId: string, userId: string): Promise<C
   return campaign;
 }
 
-export async function getCampaignPublic(campaignId: string): Promise<Campaign | null> {
+export const getCampaignPublic = cache(async (campaignId: string): Promise<Campaign | null> => {
   const db = adminDb();
   const doc = await db.collection(CAMPAIGNS_COL).doc(campaignId).get();
   if (!doc.exists) return null;
   return toCampaign(doc);
-}
+});
 
-export async function getUserCampaigns(userId: string): Promise<Campaign[]> {
+export const getUserCampaigns = cache(async (userId: string): Promise<Campaign[]> => {
   const db = adminDb();
   const snap = await db
     .collection(CAMPAIGNS_COL)
@@ -39,7 +40,7 @@ export async function getUserCampaigns(userId: string): Promise<Campaign[]> {
     .orderBy("updatedAt", "desc")
     .get();
   return snap.docs.map(toCampaign);
-}
+});
 
 export async function getLatestSessionDates(userId: string, campaignIds: string[]): Promise<Record<string, string>> {
   if (campaignIds.length === 0) return {};
