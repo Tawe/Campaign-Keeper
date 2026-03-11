@@ -45,9 +45,10 @@ export function PlayerCalendarView({ campaignId, calendar, sessions, events }: P
   const defaultYear = sortedYears[sortedYears.length - 1] ?? null;
   const [selectedYear, setSelectedYear] = useState<number | null>(defaultYear);
 
-  const yearIdx = selectedYear != null ? sortedYears.indexOf(selectedYear) : -1;
-  const prevYear = yearIdx > 0 ? sortedYears[yearIdx - 1] : null;
-  const nextYear = yearIdx < sortedYears.length - 1 ? sortedYears[yearIdx + 1] : null;
+  const minYear = sortedYears.length > 0 ? sortedYears[0] : null;
+  const maxYear = sortedYears.length > 0 ? sortedYears[sortedYears.length - 1] : null;
+  const prevYear = selectedYear != null && minYear != null && selectedYear > minYear - 1 ? selectedYear - 1 : null;
+  const nextYear = selectedYear != null && maxYear != null && selectedYear < maxYear + 1 ? selectedYear + 1 : null;
 
   const yearSessions =
     selectedYear != null
@@ -84,10 +85,21 @@ export function PlayerCalendarView({ campaignId, calendar, sessions, events }: P
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <h2 className="font-serif text-2xl text-foreground">
-            {selectedYear}
-            {calendar.year_label ? ` ${calendar.year_label}` : ""}
-          </h2>
+          <div className="flex items-baseline gap-2">
+            <input
+              type="number"
+              value={selectedYear}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (!isNaN(v)) setSelectedYear(v);
+              }}
+              className="w-24 bg-transparent text-center font-serif text-2xl text-foreground focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              aria-label="Year"
+            />
+            {calendar.year_label && (
+              <span className="font-serif text-2xl text-muted-foreground">{calendar.year_label}</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => nextYear != null && setSelectedYear(nextYear)}
