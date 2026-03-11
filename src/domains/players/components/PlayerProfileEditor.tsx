@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { updateMyProfile } from "@/domains/players/actions";
 import type { CharacterInput } from "@/domains/players/actions";
+import { PortraitUploader } from "@/components/shared/PortraitUploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +23,14 @@ interface Props {
 
 let keyCounter = 0;
 function newRow(): CharacterRow {
-  return { _key: ++keyCounter, name: "", class: null, race: null, level: null, statsLink: null };
+  return { _key: ++keyCounter, charId: crypto.randomUUID(), name: "", class: null, race: null, level: null, statsLink: null, portraitUrl: null };
 }
 
 export function PlayerProfileEditor({ playerId, initialName, initialCharacters }: Props) {
   const [name, setName] = useState(initialName);
   const [characters, setCharacters] = useState<CharacterRow[]>(
     initialCharacters.length
-      ? initialCharacters.map((c) => ({ ...c, _key: ++keyCounter }))
+      ? initialCharacters.map((c) => ({ ...c, _key: ++keyCounter, charId: c.charId || crypto.randomUUID() }))
       : [newRow()]
   );
   const [saving, setSaving] = useState(false);
@@ -41,13 +42,31 @@ export function PlayerProfileEditor({ playerId, initialName, initialCharacters }
     );
   }
 
+  function setCharPortrait(key: number, value: string | null) {
+    setCharacters((prev) =>
+      prev.map((c) => (c._key === key ? { ...c, portraitUrl: value } : c))
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
     setSaved(false);
     try {
-      await updateMyProfile(playerId, name, characters);
+      await updateMyProfile(
+        playerId,
+        name,
+        characters.map((c) => ({
+          charId: c.charId,
+          name: c.name,
+          class: c.class,
+          race: c.race,
+          level: c.level,
+          statsLink: c.statsLink,
+          portraitUrl: c.portraitUrl,
+        }))
+      );
       setSaved(true);
     } catch (err) {
       toast.error((err as Error).message ?? "Failed to save");
@@ -93,6 +112,11 @@ export function PlayerProfileEditor({ playerId, initialName, initialCharacters }
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+              <PortraitUploader
+                label="Character portrait"
+                value={c.portraitUrl}
+                onChange={(v) => setCharPortrait(c._key, v)}
+              />
               <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
                 <div className="space-y-1">
                   <Label className="text-xs">Class</Label>

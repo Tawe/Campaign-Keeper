@@ -144,11 +144,13 @@ export interface SessionWithCounts extends Session {
 }
 
 export interface PlayerCharacter {
+  char_id: string;
   name: string;
   class: string | null;
   race: string | null;
   level: number | null;
   stats_link: string | null;
+  portrait_url: string | null;
 }
 
 export interface Player {

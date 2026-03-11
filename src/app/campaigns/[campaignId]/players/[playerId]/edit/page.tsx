@@ -35,11 +35,13 @@ export default async function EditPlayerPage({
           name: player.name,
           portraitUrl: player.portrait_url,
           characters: player.characters.map((character) => ({
+            charId: character.char_id,
             name: character.name,
             class: character.class,
             race: character.race,
             level: character.level,
             statsLink: character.stats_link,
+            portraitUrl: character.portrait_url,
           })),
         }}
       />

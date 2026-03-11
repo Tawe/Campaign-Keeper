@@ -33,17 +33,23 @@ export default async function PlayerCampaignPage({
   const data = playerDoc.data();
   const playerName = (data.name as string) ?? "";
   const characters = ((data.characters ?? []) as {
+    charId?: string;
     name: string;
     class: string | null;
     race: string | null;
     level: number | null;
     statsLink: string | null;
+    portraitPath?: string | null;
   }[]).map<CharacterInput>((c) => ({
+    charId: c.charId ?? "",
     name: c.name,
     class: c.class,
     race: c.race,
     level: c.level,
     statsLink: c.statsLink,
+    portraitUrl: c.charId && c.portraitPath
+      ? `/api/portraits/character/${playerDoc.id}/${c.charId}`
+      : null,
   }));
 
   return (

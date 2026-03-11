@@ -171,7 +171,7 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
 }
 
 export async function savePortraitDataUrl(
-  kind: "player" | "npc" | "location" | "event",
+  kind: "player" | "npc" | "location" | "event" | "character",
   id: string,
   dataUrl: string
 ) {
@@ -235,7 +235,7 @@ export async function deletePortrait(path: string | null | undefined) {
 }
 
 export async function handlePortraitUpdate(
-  kind: "npc" | "player" | "location" | "event",
+  kind: "npc" | "player" | "location" | "event" | "character",
   entityId: string,
   value: string,
   currentPath: string | null,

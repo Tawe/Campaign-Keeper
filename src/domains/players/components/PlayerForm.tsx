@@ -29,7 +29,7 @@ interface PlayerFormProps {
 
 let keyCounter = 0;
 function newRow(): CharacterRow {
-  return { _key: ++keyCounter, name: "", class: null, race: null, level: null, statsLink: null };
+  return { _key: ++keyCounter, charId: crypto.randomUUID(), name: "", class: null, race: null, level: null, statsLink: null, portraitUrl: null };
 }
 
 export function PlayerForm({ campaignId, playerId, initialValues }: PlayerFormProps) {
@@ -38,7 +38,7 @@ export function PlayerForm({ campaignId, playerId, initialValues }: PlayerFormPr
   const [portraitUrl, setPortraitUrl] = useState<string | null>(iv?.portraitUrl ?? null);
   const [characters, setCharacters] = useState<CharacterRow[]>(
     iv?.characters.length
-      ? iv.characters.map((c) => ({ ...c, _key: ++keyCounter }))
+      ? iv.characters.map((c) => ({ ...c, _key: ++keyCounter, charId: c.charId || crypto.randomUUID() }))
       : [newRow()]
   );
   const [loading, setLoading] = useState(false);
@@ -46,6 +46,12 @@ export function PlayerForm({ campaignId, playerId, initialValues }: PlayerFormPr
   function setChar(key: number, field: keyof CharacterInput, value: string | number | null) {
     setCharacters((prev) =>
       prev.map((c) => (c._key === key ? { ...c, [field]: value } : c))
+    );
+  }
+
+  function setCharPortrait(key: number, value: string | null) {
+    setCharacters((prev) =>
+      prev.map((c) => (c._key === key ? { ...c, portraitUrl: value } : c))
     );
   }
 
@@ -69,11 +75,13 @@ export function PlayerForm({ campaignId, playerId, initialValues }: PlayerFormPr
       characters: characters
         .filter((c) => c.name.trim())
         .map((c) => ({
+          charId: c.charId,
           name: c.name,
           class: c.class,
           race: c.race,
           level: c.level,
           statsLink: c.statsLink,
+          portraitUrl: c.portraitUrl,
         })),
     };
 
@@ -139,6 +147,11 @@ export function PlayerForm({ campaignId, playerId, initialValues }: PlayerFormPr
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+              <PortraitUploader
+                label="Character portrait"
+                value={c.portraitUrl}
+                onChange={(v) => setCharPortrait(c._key, v)}
+              />
               <div className="grid gap-2 md:grid-cols-4">
                 <div className="space-y-1">
                   <Label className="text-xs">Class</Label>

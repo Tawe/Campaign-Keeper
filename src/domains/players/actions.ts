@@ -6,14 +6,66 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { PLAYERS_COL } from "@/lib/firebase/db";
-import { handlePortraitUpdate } from "@/lib/storage/s3";
+import { handlePortraitUpdate, deletePortrait } from "@/lib/storage/s3";
 
 export interface CharacterInput {
+  charId: string;
   name: string;
   class: string | null;
   race: string | null;
   level: number | null;
   statsLink: string | null;
+  portraitUrl: string | null;
+}
+
+type ExistingCharDoc = { charId?: string; portraitPath?: string | null };
+
+async function processCharacterPortraits(
+  characters: CharacterInput[],
+  existingChars: ExistingCharDoc[]
+): Promise<Map<string, string | null>> {
+  const existingByCharId = new Map(
+    existingChars
+      .filter((c) => c.charId)
+      .map((c) => [c.charId!, c.portraitPath ?? null])
+  );
+
+  // Delete portraits for removed characters
+  const newCharIds = new Set(characters.map((c) => c.charId).filter(Boolean));
+  for (const [charId, path] of existingByCharId) {
+    if (!newCharIds.has(charId)) {
+      await deletePortrait(path);
+    }
+  }
+
+  const result = new Map<string, string | null>();
+  await Promise.all(
+    characters.map(async (c) => {
+      if (!c.charId) {
+        result.set("", null);
+        return;
+      }
+      const oldPath = existingByCharId.get(c.charId) ?? null;
+      const { portraitPath } = await handlePortraitUpdate("character", c.charId, c.portraitUrl ?? "", oldPath);
+      result.set(c.charId, portraitPath);
+    })
+  );
+  return result;
+}
+
+function buildCharacterDocs(characters: CharacterInput[], portraitMap: Map<string, string | null>) {
+  return characters
+    .filter((c) => c.name.trim())
+    .map((c) => ({
+      charId: c.charId,
+      name: c.name.trim(),
+      nameLower: c.name.trim().toLowerCase(),
+      class: c.class?.trim() || null,
+      race: c.race?.trim() || null,
+      level: c.level ?? null,
+      statsLink: c.statsLink?.trim() || null,
+      portraitPath: portraitMap.get(c.charId) ?? null,
+    }));
 }
 
 export interface PlayerInput {
@@ -30,22 +82,15 @@ export async function createPlayer(input: PlayerInput) {
   const ref = adminDb().collection(PLAYERS_COL).doc();
   const { portraitPath } = await handlePortraitUpdate("player", ref.id, input.portraitUrl ?? "", null);
 
+  const charPortraitMap = await processCharacterPortraits(input.characters, []);
+
   await ref.set({
     campaignId: input.campaignId,
     userId: user.uid,
     name: input.name.trim(),
     portraitPath,
     portraitUrl: null,
-    characters: input.characters
-      .filter((c) => c.name.trim())
-      .map((c) => ({
-        name: c.name.trim(),
-        nameLower: c.name.trim().toLowerCase(),
-        class: c.class?.trim() || null,
-        race: c.race?.trim() || null,
-        level: c.level ?? null,
-        statsLink: c.statsLink?.trim() || null,
-      })),
+    characters: buildCharacterDocs(input.characters, charPortraitMap),
     createdAt: now,
     updatedAt: now,
   });
@@ -71,20 +116,14 @@ export async function updatePlayer(playerId: string, input: PlayerInput) {
     previousPortraitPath
   );
 
+  const existingChars = (doc.data()?.characters ?? []) as ExistingCharDoc[];
+  const charPortraitMap = await processCharacterPortraits(input.characters, existingChars);
+
   await db.collection(PLAYERS_COL).doc(playerId).update({
     name: input.name.trim(),
     portraitPath: nextPortraitPath,
     portraitUrl: null,
-    characters: input.characters
-      .filter((c) => c.name.trim())
-      .map((c) => ({
-        name: c.name.trim(),
-        nameLower: c.name.trim().toLowerCase(),
-        class: c.class?.trim() || null,
-        race: c.race?.trim() || null,
-        level: c.level ?? null,
-        statsLink: c.statsLink?.trim() || null,
-      })),
+    characters: buildCharacterDocs(input.characters, charPortraitMap),
     updatedAt: now,
   });
 
@@ -107,18 +146,12 @@ export async function updateMyProfile(
   }
   const campaignId = doc.data()?.campaignId as string;
 
+  const existingChars = (doc.data()?.characters ?? []) as ExistingCharDoc[];
+  const charPortraitMap = await processCharacterPortraits(characters, existingChars);
+
   await db.collection(PLAYERS_COL).doc(playerId).update({
     name: name.trim(),
-    characters: characters
-      .filter((c) => c.name.trim())
-      .map((c) => ({
-        name: c.name.trim(),
-        nameLower: c.name.trim().toLowerCase(),
-        class: c.class?.trim() || null,
-        race: c.race?.trim() || null,
-        level: c.level ?? null,
-        statsLink: c.statsLink?.trim() || null,
-      })),
+    characters: buildCharacterDocs(characters, charPortraitMap),
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -130,6 +163,10 @@ export async function deletePlayer(playerId: string, campaignId: string) {
   const db = adminDb();
   const actualCampaignId = (doc.data()?.campaignId as string) || campaignId;
   await handlePortraitUpdate("player", playerId, "", (doc.data()?.portraitPath as string | null) ?? null);
+
+  // Delete all character portraits
+  const chars = (doc.data()?.characters ?? []) as ExistingCharDoc[];
+  await Promise.all(chars.map((c) => deletePortrait(c.portraitPath)));
 
   await db.collection(PLAYERS_COL).doc(playerId).delete();
 

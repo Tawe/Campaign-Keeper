@@ -152,12 +152,14 @@ export interface PlayerDoc {
   playerUserId: string | null;
   playerEmail: string | null;
   characters: {
+    charId: string;
     name: string;
     nameLower: string;
     class: string | null;
     race: string | null;
     level: number | null;
     statsLink: string | null;
+    portraitPath: string | null;
   }[];
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;

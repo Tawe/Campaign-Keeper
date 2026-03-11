@@ -78,6 +78,11 @@ export default async function PlayerDetailPage({
                   </a>
                 ) : undefined}
               >
+                {char.portrait_url && (
+                  <div className="mb-4">
+                    <Portrait src={char.portrait_url} alt={char.name} className="h-20 w-20" />
+                  </div>
+                )}
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Sessions
                 </h3>

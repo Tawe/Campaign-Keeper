@@ -205,13 +205,21 @@ export function toPlayer(doc: DocumentSnapshot): Player {
     portrait_url: portraitUrl,
     player_user_id: d.playerUserId ?? null,
     player_email: d.playerEmail ?? null,
-    characters: (d.characters ?? []).map((c: Record<string, unknown>) => ({
-      name: c.name as string,
-      class: (c.class as string | null) ?? null,
-      race: (c.race as string | null) ?? null,
-      level: (c.level as number | null) ?? null,
-      stats_link: (c.statsLink as string | null) ?? null,
-    })),
+    characters: (d.characters ?? []).map((c: Record<string, unknown>) => {
+      const charId = (c.charId as string | undefined) ?? "";
+      const charPortraitUrl = charId && (c.portraitPath as string | null)
+        ? `/api/portraits/character/${doc.id}/${charId}?v=${portraitVersion}`
+        : null;
+      return {
+        char_id: charId,
+        name: c.name as string,
+        class: (c.class as string | null) ?? null,
+        race: (c.race as string | null) ?? null,
+        level: (c.level as number | null) ?? null,
+        stats_link: (c.statsLink as string | null) ?? null,
+        portrait_url: charPortraitUrl,
+      };
+    }),
     created_at: ts(d.createdAt),
     updated_at: ts(d.updatedAt),
   };
