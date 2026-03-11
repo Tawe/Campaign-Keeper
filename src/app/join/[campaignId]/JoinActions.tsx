@@ -13,14 +13,16 @@ export function JoinActions({ campaignId, token }: Props) {
   const router = useRouter();
 
   useEffect(() => {
-    // Store join params so auth callback can complete the join after sign-in
-    sessionStorage.setItem("joinCampaignId", campaignId);
-    sessionStorage.setItem("joinToken", token);
+    // Store join params so auth callback can complete the join after sign-in.
+    // Must use localStorage (not sessionStorage) — magic links open in a new tab
+    // which has isolated sessionStorage.
+    localStorage.setItem("joinCampaignId", campaignId);
+    localStorage.setItem("joinToken", token);
   }, [campaignId, token]);
 
   function handleSignIn() {
-    sessionStorage.setItem("joinCampaignId", campaignId);
-    sessionStorage.setItem("joinToken", token);
+    localStorage.setItem("joinCampaignId", campaignId);
+    localStorage.setItem("joinToken", token);
     router.push("/login");
   }
 

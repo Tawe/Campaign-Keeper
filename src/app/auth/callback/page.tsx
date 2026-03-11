@@ -34,7 +34,10 @@ export default function AuthCallbackPage() {
           auth,
           email,
           window.location.href
-        );
+        ).catch((err) => {
+          // Surface the Firebase error code alongside the message for easier debugging
+          throw new Error(err?.code ? `${err.message} (${err.code})` : err?.message ?? "Sign-in failed");
+        });
         localStorage.removeItem("emailForSignIn");
 
         const idToken = await credential.user.getIdToken();
@@ -48,11 +51,11 @@ export default function AuthCallbackPage() {
         if (!res.ok) throw new Error("Failed to create session");
 
         // Check for a pending campaign join (set by /join/[campaignId] page)
-        const joinCampaignId = sessionStorage.getItem("joinCampaignId");
-        const joinToken = sessionStorage.getItem("joinToken");
+        const joinCampaignId = localStorage.getItem("joinCampaignId");
+        const joinToken = localStorage.getItem("joinToken");
         if (joinCampaignId && joinToken) {
-          sessionStorage.removeItem("joinCampaignId");
-          sessionStorage.removeItem("joinToken");
+          localStorage.removeItem("joinCampaignId");
+          localStorage.removeItem("joinToken");
           router.replace(`/join/${joinCampaignId}?token=${joinToken}`);
           return;
         }
