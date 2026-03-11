@@ -123,7 +123,7 @@ export async function joinCampaign(campaignId: string, token: string) {
 
   if (!existing.empty) {
     // Already joined — just redirect
-    redirect("/player/dashboard");
+    redirect(`/player/campaigns/${campaignId}`);
   }
 
   const now = FieldValue.serverTimestamp();
@@ -148,6 +148,6 @@ export async function joinCampaign(campaignId: string, token: string) {
     updatedAt: now,
   });
 
-  revalidatePath("/player/dashboard");
-  redirect("/player/dashboard");
+  revalidatePath(`/player/campaigns/${campaignId}`);
+  redirect(`/player/campaigns/${campaignId}`);
 }
