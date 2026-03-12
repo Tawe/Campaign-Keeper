@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Users, MapPin, Shield, Scroll } from "lucide-react";
+import { Plus, Settings, Users, MapPin, Shield, Scroll } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getUserCampaigns, getLatestSessionDates, getNextScheduledDates, getPlayerCounts } from "@/domains/campaigns/queries";
 import { getPlayerMemberships } from "@/domains/players/queries";
@@ -100,6 +100,11 @@ export default async function DashboardPage() {
                 <Plus className="mr-1 h-4 w-4" /> New Campaign
               </Link>
             </PrimaryButton>
+            <SecondaryButton asChild size="sm">
+              <Link href="/app/settings">
+                <Settings className="mr-1 h-3.5 w-3.5" /> Settings
+              </Link>
+            </SecondaryButton>
             <form action={handleSignOut}>
               <SecondaryButton size="sm" type="submit">
                 Sign out

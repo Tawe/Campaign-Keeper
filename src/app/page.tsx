@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "Campaign Tracker: RPG Campaign Management for Dungeon Masters",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     title: "Campaign Tracker: TTRPG Campaign Management",
     description:
       "Track sessions, NPCs, locations, factions, and world events. Share player recaps. Built by a DM, for DMs.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
   },
   robots: { index: true, follow: true },
 };
@@ -431,6 +431,7 @@ export default function LandingPage() {
             <nav className="flex gap-5 text-sm ds-text-secondary" aria-label="Footer navigation">
               <Link href="/features" className="hover:ds-text-primary transition-colors">Features</Link>
               <Link href="/app/dashboard" className="hover:ds-text-primary transition-colors">App</Link>
+              <Link href="/privacy" className="hover:ds-text-primary transition-colors">Privacy</Link>
               <a
                 href="https://github.com/Tawe/Campaign-Keeper"
                 target="_blank"
