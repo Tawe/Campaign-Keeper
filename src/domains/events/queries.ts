@@ -1,7 +1,7 @@
 import { adminDb } from "@/lib/firebase/admin";
-import { toCampaignEvent, toEvent } from "@/lib/firebase/converters";
-import { CAMPAIGN_EVENTS_COL, EVENTS_COL } from "@/lib/firebase/db";
-import type { CampaignEvent } from "@/types";
+import { toCampaignEvent, toCampaign, toEvent } from "@/lib/firebase/converters";
+import { CAMPAIGN_EVENTS_COL, CAMPAIGNS_COL, EVENTS_COL } from "@/lib/firebase/db";
+import type { Campaign, CampaignEvent } from "@/types";
 
 export async function getCampaignEvents(campaignId: string): Promise<CampaignEvent[]> {
   const db = adminDb();
@@ -94,6 +94,36 @@ export async function getAvailableEvents(
   return allSnap.docs
     .filter((d) => !alreadyLinked.has(d.id))
     .map((d) => ({ id: d.id, title: d.data().title as string }));
+}
+
+export async function getGlobalEventsWithCampaigns(userId: string): Promise<{
+  events: CampaignEvent[];
+  eventCampaigns: Map<string, string[]>;
+  campaignMap: Map<string, Campaign>;
+}> {
+  const db = adminDb();
+
+  const [eventsSnap, campaignEventsSnap, campaignsSnap] = await Promise.all([
+    db.collection(EVENTS_COL).where("userId", "==", userId).orderBy("titleLower").get(),
+    db.collection(CAMPAIGN_EVENTS_COL).where("userId", "==", userId).get(),
+    db.collection(CAMPAIGNS_COL).where("userId", "==", userId).get(),
+  ]);
+
+  const campaignMap = new Map<string, Campaign>(
+    campaignsSnap.docs.map((doc) => [doc.id, toCampaign(doc)])
+  );
+
+  const eventCampaigns = new Map<string, string[]>();
+  campaignEventsSnap.docs.forEach((doc) => {
+    const d = doc.data();
+    const list = eventCampaigns.get(d.eventId as string) ?? [];
+    list.push(d.campaignId as string);
+    eventCampaigns.set(d.eventId as string, list);
+  });
+
+  const events = eventsSnap.docs.map(toEvent);
+
+  return { events, eventCampaigns, campaignMap };
 }
 
 /**

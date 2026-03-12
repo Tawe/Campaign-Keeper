@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
-import { requireOwnedCampaign, requireUser } from "@/lib/auth/actions";
+import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_EVENTS_COL, EVENTS_COL } from "@/lib/firebase/db";
 import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
@@ -256,4 +256,22 @@ export async function deleteEvent(eventId: string, campaignId: string) {
 
   revalidatePath(`/campaigns/${campaignId}/events`);
   revalidatePath(`/campaigns/${campaignId}/calendar`);
+}
+
+export async function deleteEventPermanently(eventId: string) {
+  const { doc } = await requireOwnedDoc("event", eventId);
+  const imagePath = (doc.data()?.imagePath as string | null) ?? null;
+
+  const db = adminDb();
+  const batch = db.batch();
+
+  batch.delete(db.collection(EVENTS_COL).doc(eventId));
+
+  const campaignLinks = await db.collection(CAMPAIGN_EVENTS_COL).where("eventId", "==", eventId).get();
+  campaignLinks.docs.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
+  await deletePortrait(imagePath);
+
+  revalidatePath(`/app/events`);
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Users, MapPin, Shield } from "lucide-react";
+import { Plus, Users, MapPin, Shield, Scroll } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getUserCampaigns, getLatestSessionDates } from "@/domains/campaigns/queries";
 import { getPlayerMemberships } from "@/domains/players/queries";
@@ -31,6 +31,12 @@ const vaultLinks = [
     label: "Factions",
     description: "Organisations, guilds, and groups",
     Icon: Shield,
+  },
+  {
+    href: "/app/events",
+    label: "Events",
+    description: "Historical events across all campaigns",
+    Icon: Scroll,
   },
 ];
 
@@ -123,26 +129,24 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {campaigns.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="font-serif text-2xl tracking-[-0.02em] text-foreground">Vault</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {vaultLinks.map(({ href, label, description, Icon }) => (
-              <Link key={href} href={href}>
-                <Card className="cursor-pointer p-5 h-full">
-                  <div className="flex items-start gap-3">
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">{label}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
-                    </div>
+      <section className="space-y-4">
+        <h2 className="font-serif text-2xl tracking-[-0.02em] text-foreground">Vault</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {vaultLinks.map(({ href, label, description, Icon }) => (
+            <Link key={href} href={href}>
+              <Card className="cursor-pointer p-5 h-full">
+                <div className="flex items-start gap-3">
+                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div>
+                    <p className="font-medium text-foreground">{label}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
                   </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {playerCampaigns.length > 0 && (
         <section className="space-y-4">

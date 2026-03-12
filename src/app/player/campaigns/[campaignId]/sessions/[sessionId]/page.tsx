@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getSessionWithDetails } from "@/domains/sessions/queries";
+import { getEventsForSession } from "@/domains/events/queries";
+import { EventCard } from "@/domains/events/components/EventCard";
 import { Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +20,10 @@ export default async function PlayerSessionDetailPage({
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const data = await getSessionWithDetails(sessionId, campaignId);
+  const [data, events] = await Promise.all([
+    getSessionWithDetails(sessionId, campaignId),
+    getEventsForSession(campaignId, sessionId),
+  ]);
   if (!data) notFound();
 
   const { session, threads, mentions } = data;
@@ -40,6 +46,9 @@ export default async function PlayerSessionDetailPage({
 
       <MetaStrip
         items={[
+          ...(session.in_game_date
+            ? [`Year ${session.in_game_date.year}, Day ${session.in_game_date.day}`]
+            : []),
           formatDateShort(session.date),
           ...session.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="font-normal normal-case tracking-[0.08em]">
@@ -110,6 +119,30 @@ export default async function PlayerSessionDetailPage({
           </SectionFrame>
         </>
       )}
+
+      {events.length > 0 && (
+        <>
+          <Separator />
+          <SectionFrame title="Events" eyebrow="World History">
+            <div className="space-y-2">
+              {events.map((event) => (
+                <EventCard key={event.id} event={event} campaignId={campaignId} />
+              ))}
+            </div>
+          </SectionFrame>
+        </>
+      )}
+
+      <div className="pt-6 text-center">
+        <Link
+          href={`/share/${session.share_token}`}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Leave feedback on this session →
+        </Link>
+      </div>
     </div>
   );
 }
