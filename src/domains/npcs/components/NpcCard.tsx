@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { User } from "lucide-react";
+import { User, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { NpcWithLastMention } from "@/types";
 
@@ -68,22 +68,11 @@ export function NpcCard({ npc, campaignId }: NpcCardProps) {
             <p className="truncate text-xs text-white/60">{npc.status}</p>
           )}
 
-          {npc.faction_names.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-0.5">
-              {npc.faction_names.slice(0, 2).map((name) => (
-                <span
-                  key={name}
-                  className="max-w-[90px] truncate rounded bg-white/15 px-1.5 py-0.5 text-[10px] text-white/80"
-                >
-                  {name}
-                </span>
-              ))}
-              {npc.faction_names.length > 2 && (
-                <span className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] text-white/80">
-                  +{npc.faction_names.length - 2}
-                </span>
-              )}
-            </div>
+          {npc.last_scene && (
+            <p className="flex items-center gap-1 truncate text-xs text-white/60">
+              <MapPin className="h-3 w-3 shrink-0" />
+              {npc.last_scene}
+            </p>
           )}
         </div>
       </div>
