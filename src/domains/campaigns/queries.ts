@@ -86,6 +86,19 @@ export async function getNextScheduledDates(campaignIds: string[]): Promise<Reco
   return results;
 }
 
+export async function getPlayerCounts(campaignIds: string[]): Promise<Record<string, number>> {
+  if (campaignIds.length === 0) return {};
+  const db = adminDb();
+  const results: Record<string, number> = {};
+  await Promise.all(
+    campaignIds.map(async (id) => {
+      const snap = await db.collection(PLAYERS_COL).where("campaignId", "==", id).count().get();
+      results[id] = snap.data().count;
+    })
+  );
+  return results;
+}
+
 export async function getCampaignCounts(campaignId: string): Promise<{ playerCount: number; locationCount: number }> {
   const db = adminDb();
   const [playersSnap, locationsSnap] = await Promise.all([

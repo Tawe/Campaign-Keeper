@@ -9,12 +9,13 @@ interface CampaignCardProps {
   campaign: Campaign;
   lastSessionDate?: string | null;
   nextSessionDate?: string | null;
+  playerCount?: number;
 }
 
-export function CampaignCard({ campaign, lastSessionDate, nextSessionDate }: CampaignCardProps) {
+export function CampaignCard({ campaign, lastSessionDate, nextSessionDate, playerCount }: CampaignCardProps) {
   const participantLabel =
-    campaign.player_user_ids.length > 0
-      ? `${campaign.player_user_ids.length} player${campaign.player_user_ids.length === 1 ? "" : "s"} joined`
+    playerCount != null && playerCount > 0
+      ? `${playerCount} player${playerCount === 1 ? "" : "s"}`
       : "No players yet";
 
   const nextLabel = nextSessionDate

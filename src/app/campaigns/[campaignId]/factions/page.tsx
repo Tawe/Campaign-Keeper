@@ -37,7 +37,7 @@ export default async function FactionsPage({
           description="Add factions to track organisations, guilds, and groups in your campaign."
         />
       ) : (
-        <div className="border rounded-lg divide-y overflow-hidden">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {factions.map((faction) => (
             <FactionCard key={faction.id} faction={faction} campaignId={campaignId} />
           ))}

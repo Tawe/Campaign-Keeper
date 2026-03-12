@@ -39,9 +39,9 @@ export default async function EventsPage({
           description="Record battles, political upheavals, disasters, and other major happenings in your world."
         />
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} campaignId={campaignId} calendar={calendar} />
+            <EventCard key={event.id} event={event} campaignId={campaignId} calendar={calendar} variant="card" />
           ))}
         </div>
       )}
