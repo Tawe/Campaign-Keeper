@@ -23,14 +23,38 @@ export async function getCampaignLocations(campaignId: string): Promise<Location
     date: doc.data().date as string,
   }));
 
+  // Batch-fetch global location docs to get image_url and terrain
+  const globalByLocationId = new Map<string, { image_url: string | null; terrain: string[] }>();
+  if (locationsSnap.size > 0) {
+    const locationIds = locationsSnap.docs.map((d) => d.data().locationId as string);
+    const globalRefs = locationIds.map((id) => db.collection(LOCATIONS_COL).doc(id));
+    const globalDocs = await db.getAll(...globalRefs);
+    globalDocs.forEach((gDoc) => {
+      if (!gDoc.exists) return;
+      const gd = gDoc.data()!;
+      const imageVersion = encodeURIComponent(gd.updatedAt?.toDate?.()?.toISOString() ?? "");
+      globalByLocationId.set(gDoc.id, {
+        image_url: gd.imagePath ? `/api/portraits/location/${gDoc.id}?v=${imageVersion}` : null,
+        terrain: Array.isArray(gd.terrain) ? gd.terrain : [],
+      });
+    });
+  }
+
   const locationMap = new Map<string, LocationWithLastVisit>();
   locationsSnap.docs.forEach((doc) => {
     const loc = toCampaignLocation(doc);
-    locationMap.set(loc.id, { ...loc, last_visited: "", last_session_id: "" });
+    const global = globalByLocationId.get(loc.id);
+    locationMap.set(loc.id, {
+      ...loc,
+      image_url: global?.image_url ?? null,
+      terrain: global?.terrain ?? [],
+      last_visited: "",
+      last_session_id: "",
+    });
   });
 
   if (locationsSnap.size > 0) {
-    const locationIds = locationsSnap.docs.map((d) => d.id);
+    const locationIds = locationsSnap.docs.map((d) => d.data().locationId as string);
     for (let i = 0; i < locationIds.length; i += 30) {
       const chunk = locationIds.slice(i, i + 30);
       const visitsSnap = await db
