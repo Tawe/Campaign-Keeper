@@ -10,7 +10,17 @@ export async function getCampaignFactions(campaignId: string): Promise<Faction[]
     .where("campaignId", "==", campaignId)
     .orderBy("name")
     .get();
-  return snap.docs.map(toCampaignFaction);
+  if (snap.empty) return [];
+
+  const factions = snap.docs.map(toCampaignFaction);
+  const globalRefs = factions.map((f) => db.collection(FACTIONS_COL).doc(f.id));
+  const globalDocs = await db.getAll(...globalRefs);
+  return factions.map((f, i) => {
+    const gDoc = globalDocs[i];
+    if (!gDoc.exists) return f;
+    const g = toFaction(gDoc);
+    return { ...f, image_url: g.image_url, faction_type: g.faction_type, alignment: g.alignment, founded: g.founded };
+  });
 }
 
 export async function getFactionWithCampaignData(factionId: string, campaignId: string): Promise<Faction | null> {
@@ -44,6 +54,7 @@ export async function getFactionWithCampaignData(factionId: string, campaignId: 
     ...campaignFaction,
     campaign_id: campaignId,
     name: campaignFaction.name || globalFaction.name,
+    image_url: globalFaction.image_url,
     faction_type: globalFaction.faction_type,
     alignment: globalFaction.alignment,
     founded: globalFaction.founded,

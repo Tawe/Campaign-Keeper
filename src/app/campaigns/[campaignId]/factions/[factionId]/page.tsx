@@ -1,11 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getFactionWithCampaignData, getNpcsInFaction } from "@/domains/factions/queries";
 import { getEventsForFaction } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { updateFactionInfo } from "@/domains/factions/actions";
 import { FactionDeleteActions } from "@/domains/factions/components/FactionDeleteActions";
+import { FactionImageEditor } from "@/domains/factions/components/FactionImageEditor";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { InlineEditor } from "@/components/shared/InlineEditor";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
@@ -36,6 +38,18 @@ export default async function FactionDetailPage({
 
   return (
     <div className="reading-shell space-y-6">
+      {faction.image_url && (
+        <div className="relative h-48 w-full overflow-hidden rounded-xl border border-border/80 sm:h-64">
+          <Image
+            src={faction.image_url}
+            alt={faction.name}
+            fill
+            unoptimized
+            className="object-cover"
+          />
+        </div>
+      )}
+
       <PageHeader
         title={faction.name}
         eyebrow="Faction"
@@ -144,6 +158,13 @@ export default async function FactionDetailPage({
           action={updateFactionInfo.bind(null, factionId, campaignId, "privateNotes")}
         />
       </div>
+
+      {/* Image */}
+      <FactionImageEditor
+        factionId={factionId}
+        campaignId={campaignId}
+        imageUrl={faction.image_url}
+      />
 
       {/* Members */}
       <SectionFrame

@@ -5,6 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_FACTIONS_COL, FACTIONS_COL } from "@/lib/firebase/db";
+import { handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
   assertMaxItems,
@@ -217,6 +218,29 @@ export async function removeFactionFromCampaign(factionId: string, campaignId: s
   if (linkDoc.data()?.campaignId !== campaignId) throw new Error("Campaign mismatch.");
   await linkDoc.ref.delete();
 
+  revalidatePath(`/campaigns/${campaignId}/factions`);
+  revalidatePath(`/app/factions`);
+}
+
+export async function updateFactionImage(factionId: string, campaignId: string, value: string) {
+  const user = await requireUser();
+  await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const globalDoc = await db.collection(FACTIONS_COL).doc(factionId).get();
+  if (!globalDoc.exists || globalDoc.data()?.userId !== user.uid) {
+    throw new Error("Faction not found.");
+  }
+
+  const previousImagePath = (globalDoc.data()?.imagePath as string | null) ?? null;
+  const { portraitPath } = await handlePortraitUpdate("faction", factionId, value, previousImagePath);
+
+  await db.collection(FACTIONS_COL).doc(factionId).update({
+    imagePath: portraitPath,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}/factions/${factionId}`);
   revalidatePath(`/campaigns/${campaignId}/factions`);
   revalidatePath(`/app/factions`);
 }

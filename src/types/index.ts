@@ -172,6 +172,7 @@ export interface Faction {
   id: string;
   campaign_id: string;
   name: string;
+  image_url: string | null;
   status: string | null;
   influence: string | null;
   faction_type: string | null;

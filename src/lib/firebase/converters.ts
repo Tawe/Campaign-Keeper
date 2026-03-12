@@ -232,10 +232,13 @@ export function toPlayer(doc: DocumentSnapshot): Player {
 
 export function toFaction(doc: DocumentSnapshot): Faction {
   const d = doc.data()!;
+  const imageVersion = encodeURIComponent(ts(d.updatedAt));
+  const image_url = d.imagePath ? `/api/portraits/faction/${doc.id}?v=${imageVersion}` : null;
   return {
     id: doc.id,
     campaign_id: d.campaignId ?? "",
     name: d.name,
+    image_url,
     // Intrinsic/historical (global)
     faction_type: d.factionType ?? null,
     alignment: d.alignment ?? null,
@@ -262,6 +265,7 @@ export function toCampaignFaction(doc: DocumentSnapshot): Faction {
     id: d.factionId,
     campaign_id: d.campaignId,
     name: d.name,
+    image_url: null, // overlaid from global doc in merge
     // Global fields — overlaid from factions doc in getFactionWithCampaignData
     faction_type: null,
     alignment: null,

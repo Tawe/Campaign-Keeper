@@ -171,7 +171,7 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
 }
 
 export async function savePortraitDataUrl(
-  kind: "player" | "npc" | "location" | "event" | "character" | "campaign",
+  kind: "player" | "npc" | "location" | "event" | "character" | "campaign" | "faction",
   id: string,
   dataUrl: string
 ) {
