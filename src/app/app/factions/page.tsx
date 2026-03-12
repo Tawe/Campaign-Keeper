@@ -29,53 +29,65 @@ export default async function GlobalFactionsPage() {
           description="Factions appear here once they have been added to a campaign."
         />
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {factions.map((faction) => {
             const campaigns = factionCampaigns.get(faction.id) ?? [];
             return (
               <div
                 key={faction.id}
-                className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
+                className="relative overflow-hidden rounded-lg border border-border/50 group transition hover:shadow-md"
               >
-                <Link
-                  href={`/app/factions/${faction.id}`}
-                  className="min-w-0 flex-1 hover:opacity-80"
-                >
-                  <p className="font-medium text-foreground truncate">{faction.name}</p>
-                  {faction.faction_type && (
-                    <p className="text-xs text-muted-foreground">{faction.faction_type}</p>
-                  )}
+                <Link href={`/app/factions/${faction.id}`} className="block">
+                  <div className="bg-muted/30 p-4 hover:bg-muted/50 transition-colors min-h-[100px]">
+                    <p className="font-serif text-lg font-medium text-foreground truncate pr-8">
+                      {faction.name}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {faction.faction_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {faction.faction_type}
+                        </Badge>
+                      )}
+                      {faction.alignment && (
+                        <Badge variant="secondary" className="text-xs font-normal">
+                          {faction.alignment}
+                        </Badge>
+                      )}
+                    </div>
+                    {campaigns.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {campaigns.map(({ campaignId, status, influence }) => {
+                          const campaign = campaignMap.get(campaignId);
+                          if (!campaign) return null;
+                          return (
+                            <span key={campaignId} className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs">
+                                {campaign.name}
+                              </Badge>
+                              {status && (
+                                <Badge variant="secondary" className="text-xs font-normal">
+                                  {status}
+                                </Badge>
+                              )}
+                              {influence && (
+                                <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                                  {influence}
+                                </Badge>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </Link>
 
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
+                <div className="absolute top-2 right-2">
                   <VaultDeleteButton
                     entityName={faction.name}
                     description="This will permanently delete this faction from all campaigns and the vault. This cannot be undone."
                     action={deleteFactionPermanently.bind(null, faction.id)}
                   />
-                  {campaigns.map(({ campaignId, status, influence }) => {
-                    const campaign = campaignMap.get(campaignId);
-                    if (!campaign) return null;
-                    return (
-                      <div key={campaignId} className="flex items-center gap-1.5">
-                        <Link href={`/campaigns/${campaignId}/factions/${faction.id}?from=vault`}>
-                          <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
-                            {campaign.name}
-                          </Badge>
-                        </Link>
-                        {status && (
-                          <Badge variant="secondary" className="text-xs font-normal">
-                            {status}
-                          </Badge>
-                        )}
-                        {influence && (
-                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
-                            {influence}
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
             );

@@ -1,9 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
+import { User } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getGlobalNpcsWithCampaigns } from "@/domains/npcs/queries";
 import { deleteNpcPermanently } from "@/domains/npcs/actions";
-import { Portrait } from "@/components/shared/Portrait";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
@@ -37,43 +38,82 @@ export default async function GlobalNpcsPage() {
           description="NPCs appear here once they have been mentioned in at least one session."
         />
       ) : (
-        <div className="space-y-2">
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {npcs.map((npc) => {
             const campaigns = npcCampaigns.get(npc.id) ?? [];
+            const classDisplay =
+              npc.npc_class.length > 0
+                ? npc.npc_class.map((c) => `${c.name} ${c.level}`).join(" / ")
+                : null;
+            const identityParts = [npc.race, classDisplay].filter(Boolean) as string[];
+
             return (
               <div
                 key={npc.id}
-                className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
+                className="relative overflow-hidden rounded-xl border border-border/80 group transition hover:shadow-md"
               >
-                <Link
-                  href={`/app/npcs/${npc.id}`}
-                  className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80"
-                >
-                  <Portrait src={npc.portrait_url} alt={npc.name} className="h-10 w-10 shrink-0" />
-                  <p className="font-medium text-foreground truncate">{npc.name}</p>
+                <Link href={`/app/npcs/${npc.id}`} className="block">
+                  <div className="aspect-[3/4]">
+                    {npc.portrait_url ? (
+                      <Image
+                        src={npc.portrait_url}
+                        alt={npc.name}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                        <User className="h-12 w-12 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 space-y-1 p-3">
+                      <p className="truncate font-semibold leading-tight text-white">{npc.name}</p>
+                      {identityParts.length > 0 && (
+                        <p className="text-xs text-white/70">{identityParts.join(" · ")}</p>
+                      )}
+                      {npc.faction_names.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {npc.faction_names.slice(0, 2).map((name) => (
+                            <span
+                              key={name}
+                              className="max-w-[90px] truncate rounded bg-white/15 px-1.5 py-0.5 text-[10px] text-white/80"
+                            >
+                              {name}
+                            </span>
+                          ))}
+                          {npc.faction_names.length > 2 && (
+                            <span className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] text-white/80">
+                              +{npc.faction_names.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </Link>
 
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
+                {/* Campaign badges + delete — overlaid top-right */}
+                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                   <VaultDeleteButton
                     entityName={npc.name}
                     description="This will permanently delete this NPC from all campaigns and the vault. This cannot be undone."
                     action={deleteNpcPermanently.bind(null, npc.id)}
                   />
-                  {campaigns.map(({ campaignId, status, disposition }) => {
+                  {campaigns.map(({ campaignId, disposition }) => {
                     const campaign = campaignMap.get(campaignId);
                     if (!campaign) return null;
                     return (
-                      <div key={campaignId} className="flex items-center gap-1.5">
+                      <div key={campaignId} className="flex items-center gap-1">
                         <Link href={`/campaigns/${campaignId}/npcs/${npc.id}?from=vault`}>
-                          <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <Badge
+                            variant="outline"
+                            className="border-white/20 bg-black/30 text-xs text-white/80 backdrop-blur-sm hover:bg-black/50 cursor-pointer"
+                          >
                             {campaign.name}
                           </Badge>
                         </Link>
-                        {status && (
-                          <Badge variant="secondary" className="text-xs font-normal">
-                            {status}
-                          </Badge>
-                        )}
                         {disposition && (
                           <Badge
                             variant="outline"
