@@ -95,6 +95,7 @@ export default async function NpcDetailPage({
           value={npc.stats_link}
           placeholder="Add a stat block, sheet, or reference link…"
           action={updateNpcInfo.bind(null, npcId, campaignId, "statsLink")}
+          isUrl
         />
       </div>
 

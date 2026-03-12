@@ -11,6 +11,7 @@ interface InlineInputEditorProps {
   value: string | null;
   action: (value: string) => Promise<void>;
   placeholder?: string;
+  isUrl?: boolean;
 }
 
 export function InlineInputEditor({
@@ -18,6 +19,7 @@ export function InlineInputEditor({
   value,
   action,
   placeholder,
+  isUrl = false,
 }: InlineInputEditorProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
@@ -65,14 +67,18 @@ export function InlineInputEditor({
           </div>
         </div>
       ) : value ? (
-        <a
-          href={value}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary underline underline-offset-2"
-        >
-          Open link
-        </a>
+        isUrl ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline underline-offset-2"
+          >
+            Open link
+          </a>
+        ) : (
+          <p className="text-sm text-foreground">{value}</p>
+        )
       ) : (
         <p className="text-sm italic text-muted-foreground">{placeholder ?? "Nothing recorded yet."}</p>
       )}
