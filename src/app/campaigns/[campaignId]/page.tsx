@@ -7,6 +7,7 @@ import { getCampaignNpcsWithMentions } from "@/domains/npcs/queries";
 import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignThreads } from "@/domains/threads/queries";
 import { getCampaignPlayers } from "@/domains/players/queries";
+import { getNextScheduledSession } from "@/domains/schedule/queries";
 import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
@@ -18,6 +19,7 @@ import { TimelineItem } from "@/components/ui/timeline-item";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { SecondaryButton } from "@/components/ui/secondary-button";
 import { formatDateShort } from "@/lib/utils";
+import { Calendar } from "lucide-react";
 
 export default async function CampaignDashboardPage({
   params,
@@ -31,16 +33,39 @@ export default async function CampaignDashboardPage({
   const campaign = await getCampaign(campaignId, user.uid);
   if (!campaign) notFound();
 
-  const [sessions, threads, counts, players, npcs] = await Promise.all([
+  const [sessions, threads, counts, players, npcs, nextSession] = await Promise.all([
     getCampaignSessions(campaignId),
     getCampaignThreads(campaignId),
     getCampaignCounts(campaignId),
     getCampaignPlayers(campaignId),
     getCampaignNpcsWithMentions(campaignId),
+    getNextScheduledSession(campaignId),
   ]);
 
   const openThreads = threads.filter((t) => t.status === "open");
   const { playerCount, locationCount } = counts;
+
+  // Countdown
+  let countdownLabel: string | null = null;
+  let countdownSub: string | null = null;
+  if (nextSession) {
+    const today = new Date().toISOString().slice(0, 10);
+    const diff = Math.round(
+      (new Date(nextSession.date).getTime() - new Date(today).getTime()) / 86_400_000
+    );
+    countdownLabel =
+      diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : `In ${diff} days`;
+    const parts = [
+      new Date(nextSession.date + "T12:00:00").toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }),
+    ];
+    if (nextSession.time) parts.push(nextSession.time);
+    if (nextSession.title) parts.push(nextSession.title);
+    countdownSub = parts.join(" · ");
+  }
 
   return (
     <div className="px-6 py-8">
@@ -64,6 +89,20 @@ export default async function CampaignDashboardPage({
                   </p>
                 </div>
               </div>
+              {nextSession && countdownLabel && (
+                <Link
+                  href={`/campaigns/${campaignId}/schedule`}
+                  className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 transition-colors hover:border-primary/40 hover:bg-primary/10"
+                >
+                  <Calendar className="h-4 w-4 shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{countdownLabel}</p>
+                    {countdownSub && (
+                      <p className="truncate text-xs text-muted-foreground">{countdownSub}</p>
+                    )}
+                  </div>
+                </Link>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <InviteLinkButton campaignId={campaignId} inviteToken={campaign.invite_token} />
                 <DeleteCampaignButton campaignId={campaignId} campaignName={campaign.name} />

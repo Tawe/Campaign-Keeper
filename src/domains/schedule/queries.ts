@@ -64,3 +64,17 @@ export async function getScheduledSessionById(id: string): Promise<ScheduledSess
   if (!doc.exists) return null;
   return toScheduledSession(doc);
 }
+
+export const getNextScheduledSession = cache(async (campaignId: string): Promise<ScheduledSession | null> => {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const snap = await adminDb()
+    .collection(SCHEDULED_SESSIONS_COL)
+    .where("campaignId", "==", campaignId)
+    .where("status", "==", "upcoming")
+    .where("date", ">=", today)
+    .orderBy("date", "asc")
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  return toScheduledSession(snap.docs[0]);
+});
