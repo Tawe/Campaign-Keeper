@@ -60,7 +60,7 @@ function getS3Client() {
     "CAMPAIGN_KEEPER_AWS_SECRET_ACCESS_KEY",
     "AWS_SECRET_ACCESS_KEY"
   );
-  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN", "AWS_SESSION_TOKEN");
+  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN");
   const endpoint = getEnv("CAMPAIGN_KEEPER_S3_ENDPOINT", "S3_ENDPOINT");
   const forcePathStyle =
     getEnv("CAMPAIGN_KEEPER_S3_FORCE_PATH_STYLE", "S3_FORCE_PATH_STYLE") === "true";
@@ -74,7 +74,7 @@ function getS3Client() {
         ? {
             accessKeyId,
             secretAccessKey,
-            sessionToken,
+            ...(sessionToken ? { sessionToken } : {}),
           }
         : undefined,
   });
@@ -93,13 +93,13 @@ function getRekognitionClient(): RekognitionClient | null {
 
   const accessKeyId = getEnv("CAMPAIGN_KEEPER_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID");
   const secretAccessKey = getEnv("CAMPAIGN_KEEPER_AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY");
-  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN", "AWS_SESSION_TOKEN");
+  const sessionToken = getEnv("CAMPAIGN_KEEPER_AWS_SESSION_TOKEN");
 
   rekognitionClient = new RekognitionClient({
     region,
     credentials:
       accessKeyId && secretAccessKey
-        ? { accessKeyId, secretAccessKey, sessionToken }
+        ? { accessKeyId, secretAccessKey, ...(sessionToken ? { sessionToken } : {}) }
         : undefined,
   });
 
