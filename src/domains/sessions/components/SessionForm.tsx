@@ -265,6 +265,7 @@ export function SessionForm({ campaignId, existingNpcs, existingPlayers = [], ex
         await createSession(input);
       }
     } catch (err) {
+      if ((err as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw err;
       toast.error((err as Error).message ?? "Failed to save session");
       setLoading(false);
     }
