@@ -235,7 +235,7 @@ export async function deletePortrait(path: string | null | undefined) {
 }
 
 export async function handlePortraitUpdate(
-  kind: "npc" | "player" | "location" | "event" | "character" | "campaign",
+  kind: "npc" | "player" | "location" | "event" | "character" | "campaign" | "faction",
   entityId: string,
   value: string,
   currentPath: string | null,
