@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,15 +21,18 @@ interface VaultDeleteButtonProps {
   entityName: string;
   description: string;
   action: () => Promise<void>;
+  redirectHref?: string;
 }
 
-export function VaultDeleteButton({ entityName, description, action }: VaultDeleteButtonProps) {
+export function VaultDeleteButton({ entityName, description, action, redirectHref }: VaultDeleteButtonProps) {
   const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
 
   async function handleDelete() {
     setDeleting(true);
     try {
       await action();
+      if (redirectHref) router.push(redirectHref);
     } catch (err) {
       toast.error((err as Error).message ?? `Failed to delete ${entityName}`);
       setDeleting(false);

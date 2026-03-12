@@ -8,7 +8,9 @@ import {
   CAMPAIGN_FACTIONS_COL,
   FACTIONS_COL,
 } from "@/lib/firebase/db";
+import { deleteFactionPermanently } from "@/domains/factions/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -51,6 +53,14 @@ export default async function FactionVaultDetailPage({
         eyebrow="Faction"
         backHref="/app/factions"
         backLabel="Factions"
+        action={
+          <VaultDeleteButton
+            entityName={faction.name}
+            description="This will permanently delete this faction from all campaigns and the vault. This cannot be undone."
+            action={deleteFactionPermanently.bind(null, factionId)}
+            redirectHref="/app/factions"
+          />
+        }
       />
 
       <div className="flex flex-wrap gap-1.5">

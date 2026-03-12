@@ -9,7 +9,9 @@ import {
   CAMPAIGN_LOCATIONS_COL,
   LOCATIONS_COL,
 } from "@/lib/firebase/db";
+import { deleteLocationPermanently } from "@/domains/locations/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -64,6 +66,14 @@ export default async function LocationVaultDetailPage({
         eyebrow="Location"
         backHref="/app/locations"
         backLabel="Locations"
+        action={
+          <VaultDeleteButton
+            entityName={location.name}
+            description="This will permanently delete this location from all campaigns and the vault. Sub-locations will have their parent cleared. This cannot be undone."
+            action={deleteLocationPermanently.bind(null, locationId)}
+            redirectHref="/app/locations"
+          />
+        }
       />
 
       {location.terrain.length > 0 && (

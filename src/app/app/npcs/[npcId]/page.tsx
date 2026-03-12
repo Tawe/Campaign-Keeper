@@ -8,8 +8,10 @@ import {
   CAMPAIGN_NPCS_COL,
   NPCS_COL,
 } from "@/lib/firebase/db";
+import { deleteNpcPermanently } from "@/domains/npcs/actions";
 import { Portrait } from "@/components/shared/Portrait";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -60,6 +62,14 @@ export default async function NpcVaultDetailPage({
         eyebrow="NPC"
         backHref="/app/npcs"
         backLabel="NPCs"
+        action={
+          <VaultDeleteButton
+            entityName={npc.name}
+            description="This will permanently delete this NPC from all campaigns and the vault. This cannot be undone."
+            action={deleteNpcPermanently.bind(null, npcId)}
+            redirectHref="/app/npcs"
+          />
+        }
       />
 
       <div className="flex items-start gap-6">

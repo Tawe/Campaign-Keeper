@@ -9,7 +9,9 @@ import {
   CAMPAIGN_EVENTS_COL,
   EVENTS_COL,
 } from "@/lib/firebase/db";
+import { deleteEventPermanently } from "@/domains/events/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -67,6 +69,14 @@ export default async function EventVaultDetailPage({
         eyebrow="Event"
         backHref="/app/events"
         backLabel="Events"
+        action={
+          <VaultDeleteButton
+            entityName={event.title}
+            description="This will permanently delete this event from all campaigns and the vault. This cannot be undone."
+            action={deleteEventPermanently.bind(null, eventId)}
+            redirectHref="/app/events"
+          />
+        }
       />
 
       <div className="flex flex-wrap gap-1.5">
