@@ -20,7 +20,7 @@ import { Card } from "@/components/ui/ds-card";
 export const metadata: Metadata = {
   title: "Features",
   description:
-    "Every tool a Dungeon Master needs to run a long campaign — session logs, NPC database with portraits, location atlas, faction management, world events timeline, player recaps, scheduling, in-game calendar, and more.",
+    "Every tool a Dungeon Master needs to run a long campaign: session logs, NPC database with portraits, location atlas, faction management, world events timeline, player recaps, scheduling, in-game calendar, and more.",
   openGraph: {
     title: "Features | Campaign Tracker",
     description:
@@ -53,7 +53,7 @@ const features = [
     title: "NPC Database",
     tagline: "Every character at your fingertips",
     bullets: [
-      "Upload a portrait — shown on cards, recaps, and the dashboard",
+      "Upload a portrait, shown on cards, recaps, and the dashboard",
       "Race, class, alignment, status, and disposition fields",
       "Faction membership with live roster on faction pages",
       "Last known location tracked automatically via session visits",
@@ -68,7 +68,7 @@ const features = [
     bullets: [
       "Upload a banner image for every location",
       "Terrain tags (forest, dungeon, city, sea…)",
-      "Nested hierarchy — regions contain cities contain districts",
+      "Nested hierarchy: regions contain cities contain districts",
       "See which NPCs are currently at this location",
       "Visit history showing which sessions took place here",
       "Public info and private DM notes per campaign",
@@ -83,7 +83,7 @@ const features = [
       "Leader names, allegiances, and enemies",
       "Home base, founding date, and member count",
       "Upload faction artwork as a banner image",
-      "Live members roster — any NPC with this faction assigned appears here",
+      "Live members roster: any NPC with this faction assigned appears here",
       "Linked events show what this faction was involved in",
     ],
   },
@@ -105,7 +105,7 @@ const features = [
     title: "Player Portal & Recaps",
     tagline: "Give your players a companion app",
     bullets: [
-      "Players join via invite link — no DM account needed",
+      "Players join via invite link, no DM account needed",
       "Read-only session recaps with highlights and story threads",
       "Upcoming session callout with date and countdown",
       "Most recent session card on campaign dashboard",
@@ -130,7 +130,7 @@ const features = [
     title: "In-Game Calendar",
     tagline: "Your world runs on its own clock",
     bullets: [
-      "Build a fully custom calendar — name months, set week length",
+      "Build a fully custom calendar: name months, set week length",
       "Add a year label and era name",
       "Sessions grouped by in-world month and year",
       "World events appear alongside sessions in calendar view",
@@ -154,7 +154,7 @@ const features = [
     title: "DM Private Notes",
     tagline: "Keep your secrets safe",
     bullets: [
-      "Every entity has a private notes field — sessions, NPCs, locations, factions, events",
+      "Every entity has a private notes field: sessions, NPCs, locations, factions, events",
       "Private notes are never included in player recaps",
       "Public info and DM notes rendered side-by-side in the DM view",
       "Clearly labelled so you never accidentally share secrets",
@@ -177,7 +177,7 @@ const features = [
     title: "Portrait & Image Uploads",
     tagline: "Faces and places for every entry",
     bullets: [
-      "Upload NPC portraits — shown on cards, dashboards, and recaps",
+      "Upload NPC portraits, shown on cards, dashboards, and recaps",
       "Location and faction banner images",
       "Event artwork and illustrations",
       "Images stored securely and served from CDN",
@@ -197,7 +197,7 @@ export default function FeaturesPage() {
         />
         <p className="mx-auto mt-4 max-w-2xl text-base leading-7 ds-text-secondary text-center">
           Everything a Dungeon Master needs to run a long campaign without losing the story.
-          System-agnostic — works with D&amp;D 5e, Pathfinder, and any tabletop RPG.
+          System-agnostic. Works with D&amp;D 5e, Pathfinder, and any tabletop RPG.
         </p>
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {features.map(({ icon: Icon, title, tagline, bullets }) => (

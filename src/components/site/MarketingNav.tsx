@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Github } from "lucide-react";
 import { PrimaryButton } from "@/components/ui/primary-button";
 
 interface MarketingNavProps {
@@ -22,6 +23,15 @@ export function MarketingNav({ overlay = false }: MarketingNavProps) {
           <Link href="/" className="transition-colors hover:text-[var(--ds-text-primary)]">Home</Link>
           <Link href="/features" className="transition-colors hover:text-[var(--ds-text-primary)]">Features</Link>
           <Link href="/about" className="transition-colors hover:text-[var(--ds-text-primary)]">About</Link>
+          <a
+            href="https://github.com/Tawe/Campaign-Keeper"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View source on GitHub"
+            className="transition-colors hover:text-[var(--ds-text-primary)]"
+          >
+            <Github className="h-4 w-4" />
+          </a>
         </nav>
         <PrimaryButton asChild size="sm">
           <Link href="/app/dashboard">Launch App</Link>

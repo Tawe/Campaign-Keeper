@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CalendarRange,
   Castle,
+  Github,
   Globe,
   MapPinned,
   ScrollText,
@@ -23,7 +24,7 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { MarketingNav } from "@/components/site/MarketingNav";
 
 export const metadata: Metadata = {
-  title: "Campaign Tracker — D&D & TTRPG Campaign Management for Dungeon Masters",
+  title: "Campaign Tracker: D&D & TTRPG Campaign Management for Dungeon Masters",
   description:
     "The campaign journal built for Dungeon Masters. Track sessions, NPCs, locations, factions, and world events. Share recaps with your players. Run better campaigns.",
   keywords: [
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     "TTRPG session log",
   ],
   openGraph: {
-    title: "Campaign Tracker — D&D & TTRPG Campaign Management",
+    title: "Campaign Tracker: D&D & TTRPG Campaign Management",
     description:
       "The campaign journal built for Dungeon Masters. Track sessions, NPCs, locations, factions, and world events. Share recaps with players.",
     type: "website",
@@ -52,13 +53,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Campaign Tracker — RPG Campaign Management for Dungeon Masters",
+        alt: "Campaign Tracker: RPG Campaign Management for Dungeon Masters",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Campaign Tracker — TTRPG Campaign Management",
+    title: "Campaign Tracker: TTRPG Campaign Management",
     description:
       "Track sessions, NPCs, locations, factions, and world events. Share player recaps. Built by a DM, for DMs.",
     images: ["/og-image.png"],
@@ -93,7 +94,7 @@ const jsonLd = {
         "Custom in-game calendar system",
         "Plot threads and unresolved hooks tracker",
         "DM private notes hidden from players",
-        "Campaign vault — shared library across all campaigns",
+        "Campaign vault: shared library across all campaigns",
         "Portrait and banner image uploads",
       ],
     },
@@ -105,7 +106,7 @@ const jsonLd = {
           name: "What is Campaign Tracker?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Campaign Tracker is a web-based campaign management tool for tabletop RPG Dungeon Masters. It helps you log sessions, track NPCs and locations, manage factions, build a world events timeline, and share player-facing recaps — all in one place.",
+            text: "Campaign Tracker is a web-based campaign management tool for tabletop RPG Dungeon Masters. It helps you log sessions, track NPCs and locations, manage factions, build a world events timeline, and share player-facing recaps, all in one place.",
           },
         },
         {
@@ -113,7 +114,7 @@ const jsonLd = {
           name: "Can players use Campaign Tracker?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Yes. Players join via an invite link and get their own read-only portal. They can read session recaps, see public NPC and location information, track upcoming sessions, and leave session feedback — without seeing any of the DM's private notes.",
+            text: "Yes. Players join via an invite link and get their own read-only portal. They can read session recaps, see public NPC and location information, track upcoming sessions, and leave session feedback, without seeing any of the DM's private notes.",
           },
         },
         {
@@ -121,7 +122,7 @@ const jsonLd = {
           name: "Does Campaign Tracker work for D&D 5e?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Campaign Tracker is system-agnostic and works with any tabletop RPG — D&D 5e, Pathfinder, Call of Cthulhu, Blades in the Dark, and more. It tracks what matters for any campaign: sessions, characters, places, and story threads.",
+            text: "Campaign Tracker is system-agnostic and works with any tabletop RPG: D&D 5e, Pathfinder, Call of Cthulhu, Blades in the Dark, and more. It tracks what matters for any campaign: sessions, characters, places, and story threads.",
           },
         },
         {
@@ -172,7 +173,7 @@ const features = [
     icon: Users,
     title: "NPC Database",
     description:
-      "Full profiles for every character — portrait, race, class, alignment, status, disposition, faction membership, and last known location. Portraits pull through to recaps and the campaign dashboard.",
+      "Full profiles for every character: portrait, race, class, alignment, status, disposition, faction membership, and last known location. Portraits pull through to recaps and the campaign dashboard.",
   },
   {
     icon: MapPinned,
@@ -196,7 +197,7 @@ const features = [
     icon: BookOpenText,
     title: "Player Portal & Recaps",
     description:
-      "Players join via invite link and get a read-only portal — session recaps, NPC and location info, upcoming session details, and a feedback form after each game.",
+      "Players join via invite link and get a read-only portal with session recaps, NPC and location info, upcoming session details, and a feedback form after each game.",
   },
   {
     icon: CalendarDays,
@@ -208,19 +209,19 @@ const features = [
     icon: CalendarRange,
     title: "In-Game Calendar",
     description:
-      "Build a custom calendar for your world — name the months, set week length, add a year label. Sessions and events appear in a timeline view grouped by in-world month and year.",
+      "Build a custom calendar for your world: name the months, set week length, add a year label. Sessions and events appear in a timeline view grouped by in-world month and year.",
   },
   {
     icon: Waypoints,
     title: "Plot Threads & Hooks",
     description:
-      "Track open threads from each session — unresolved mysteries, dangling hooks, and promises made. Mark them resolved as the story progresses.",
+      "Track open threads from each session: unresolved mysteries, dangling hooks, and promises made. Mark them resolved as the story progresses.",
   },
   {
     icon: Shield,
     title: "DM Private Notes",
     description:
-      "Every entity has a private notes field visible only to you. Sessions, NPCs, locations, factions, and events — keep your secrets separate from the player-facing summaries.",
+      "Every entity has a private notes field visible only to you. Sessions, NPCs, locations, factions, and events. Keep your secrets separate from the player-facing summaries.",
   },
   {
     icon: Zap,
@@ -271,7 +272,7 @@ export default function LandingPage() {
                   Run your campaign without losing the story.
                 </p>
                 <p className="text-base leading-7 ds-body">
-                  One place for sessions, NPCs, locations, factions, world events, and player recaps — built by a Dungeon Master, for Dungeon Masters.
+                  One place for sessions, NPCs, locations, factions, world events, and player recaps. Built by a Dungeon Master, for Dungeon Masters.
                 </p>
                 <div className="flex flex-wrap gap-3 pt-1">
                   <PrimaryButton asChild size="lg">
@@ -298,7 +299,7 @@ export default function LandingPage() {
               Most Dungeon Masters juggle notebooks, Google Docs, Discord pins, and chat logs just to remember what happened last session.
             </p>
             <p className="mx-auto mt-2 max-w-2xl text-base leading-7 ds-text-secondary">
-              Campaign Tracker brings everything together — session logs, NPC profiles, location maps, faction webs, and a living world timeline — so you can prep faster and play better.
+              Campaign Tracker brings everything together: session logs, NPC profiles, location maps, faction webs, and a living world timeline. Prep faster and play better.
             </p>
 
             <div className="mt-14 grid gap-6 sm:grid-cols-3">
@@ -360,7 +361,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* FAQ — AEO / GEO */}
+          {/* FAQ: AEO / GEO */}
           <section
             className="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8"
             aria-label="Frequently asked questions"
@@ -370,7 +371,7 @@ export default function LandingPage() {
               {[
                 {
                   q: "What is Campaign Tracker?",
-                  a: "Campaign Tracker is a web-based campaign journal for tabletop RPG Dungeon Masters. It helps you log sessions, track NPCs and locations, manage factions, build a world events timeline, and share player-facing recaps — all in one place.",
+                  a: "Campaign Tracker is a web-based campaign journal for tabletop RPG Dungeon Masters. It helps you log sessions, track NPCs and locations, manage factions, build a world events timeline, and share player-facing recaps, all in one place.",
                 },
                 {
                   q: "Does it work with D&D 5e and other systems?",
@@ -390,7 +391,7 @@ export default function LandingPage() {
                 },
                 {
                   q: "Do I need to install anything?",
-                  a: "No. Campaign Tracker is a web app — open it in any browser, sign in with a magic link email, and start tracking. Nothing to install or self-host.",
+                  a: "No. Campaign Tracker is a web app. Open it in any browser, sign in with a magic link email, and start tracking. Nothing to install or self-host.",
                 },
               ].map(({ q, a }) => (
                 <div key={q} className="rounded-xl border border-white/10 p-6">
@@ -425,11 +426,20 @@ export default function LandingPage() {
         <footer className="border-t border-white/10 px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <p className="text-sm ds-text-secondary text-center sm:text-left">
-              Campaign Tracker — indie campaign management for tabletop RPG Dungeon Masters. System-agnostic. Works with D&amp;D, Pathfinder, and more.
+              Campaign Tracker: indie campaign management for tabletop RPG Dungeon Masters. System-agnostic. Works with D&amp;D, Pathfinder, and more.
             </p>
             <nav className="flex gap-5 text-sm ds-text-secondary" aria-label="Footer navigation">
               <Link href="/features" className="hover:ds-text-primary transition-colors">Features</Link>
               <Link href="/app/dashboard" className="hover:ds-text-primary transition-colors">App</Link>
+              <a
+                href="https://github.com/Tawe/Campaign-Keeper"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:ds-text-primary transition-colors flex items-center gap-1.5"
+              >
+                <Github className="h-3.5 w-3.5" />
+                GitHub
+              </a>
             </nav>
           </div>
           <p className="mt-4 text-center text-xs text-[color:color-mix(in_srgb,var(--ds-text-secondary)_60%,transparent)]">
