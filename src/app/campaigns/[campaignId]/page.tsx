@@ -4,6 +4,7 @@ import { Plus, Search } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getCampaign, getCampaignCounts } from "@/domains/campaigns/queries";
 import { getCampaignNpcsWithMentions } from "@/domains/npcs/queries";
+import { NpcCard } from "@/domains/npcs/components/NpcCard";
 import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignThreads } from "@/domains/threads/queries";
 import { getCampaignPlayers } from "@/domains/players/queries";
@@ -12,7 +13,6 @@ import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
 import { CampaignImageEditor } from "@/domains/campaigns/components/CampaignImageEditor";
-import { Portrait } from "@/components/shared/Portrait";
 import { Panel } from "@/components/ui/panel";
 import { StatTile } from "@/components/ui/stat-tile";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -243,23 +243,9 @@ export default async function CampaignDashboardPage({
             {npcs.length === 0 ? (
               <p className="text-sm text-muted-foreground">No NPCs recorded yet.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 {npcs.slice(0, 6).map((npc) => (
-                  <Link
-                    key={npc.id}
-                    href={`/campaigns/${campaignId}/npcs/${npc.id}`}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/50 bg-muted/30 px-3 py-2 transition hover:border-primary/40"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Portrait src={npc.portrait_url} alt={npc.name} className="h-8 w-8" />
-                      <p className="truncate text-sm text-foreground">{npc.name}</p>
-                    </div>
-                    {npc.last_mentioned && (
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDateShort(npc.last_mentioned)}
-                      </span>
-                    )}
-                  </Link>
+                  <NpcCard key={npc.id} npc={npc} campaignId={campaignId} />
                 ))}
               </div>
             )}
