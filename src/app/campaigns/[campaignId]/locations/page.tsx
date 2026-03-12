@@ -35,7 +35,7 @@ export default async function LocationsPage({
           description="Add locations manually or list them in session notes."
         />
       ) : (
-        <div className="border rounded-lg divide-y overflow-hidden">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {locations.map((loc) => (
             <LocationCard key={loc.id} location={loc} campaignId={campaignId} />
           ))}
