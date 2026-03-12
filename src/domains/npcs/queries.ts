@@ -32,10 +32,29 @@ export async function getCampaignNpcsWithMentions(campaignId: string): Promise<N
     date: doc.data().date as string,
   }));
 
+  // Batch-fetch global NPC docs to get portrait_url, race, npc_class, faction_names
+  const globalByNpcId = new Map<string, Partial<Npc>>();
+  if (npcsSnap.size > 0) {
+    const npcIds = npcsSnap.docs.map((d) => d.data().npcId as string);
+    const globalRefs = npcIds.map((id) => db.collection(NPCS_COL).doc(id));
+    const globalDocs = await db.getAll(...globalRefs);
+    globalDocs.forEach((gDoc) => {
+      if (!gDoc.exists) return;
+      const g = toNpc(gDoc);
+      globalByNpcId.set(gDoc.id, {
+        portrait_url: g.portrait_url,
+        race: g.race,
+        npc_class: g.npc_class,
+        faction_names: g.faction_names,
+      });
+    });
+  }
+
   const npcMap = new Map<string, NpcWithLastMention>();
   npcsSnap.docs.forEach((doc) => {
     const npc = toCampaignNpc(doc);
-    npcMap.set(npc.id, { ...npc, last_mentioned: "", last_session_id: "" });
+    const global = globalByNpcId.get(npc.id);
+    npcMap.set(npc.id, { ...npc, ...global, last_mentioned: "", last_session_id: "" });
   });
 
   if (sessions.length > 0) {
