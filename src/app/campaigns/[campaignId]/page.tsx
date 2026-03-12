@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Scroll } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getCampaign, getCampaignCounts } from "@/domains/campaigns/queries";
 import { getCampaignNpcsWithMentions } from "@/domains/npcs/queries";
@@ -9,6 +9,7 @@ import { getCampaignSessions } from "@/domains/sessions/queries";
 import { getCampaignThreads } from "@/domains/threads/queries";
 import { getCampaignPlayers } from "@/domains/players/queries";
 import { getNextScheduledSession } from "@/domains/schedule/queries";
+import { getCampaignCalendar } from "@/domains/calendars/queries";
 import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
@@ -34,17 +35,27 @@ export default async function CampaignDashboardPage({
   const campaign = await getCampaign(campaignId, user.uid);
   if (!campaign) notFound();
 
-  const [sessions, threads, counts, players, npcs, nextSession] = await Promise.all([
+  const [sessions, threads, counts, players, npcs, nextSession, calendar] = await Promise.all([
     getCampaignSessions(campaignId),
     getCampaignThreads(campaignId),
     getCampaignCounts(campaignId),
     getCampaignPlayers(campaignId),
     getCampaignNpcsWithMentions(campaignId),
     getNextScheduledSession(campaignId),
+    getCampaignCalendar(campaignId),
   ]);
 
   const openThreads = threads.filter((t) => t.status === "open");
   const { playerCount, locationCount } = counts;
+
+  // Current in-game date from most recent session
+  const currentInGameDate = sessions[0]?.in_game_date ?? null;
+  let inGameDateLabel: string | null = null;
+  if (currentInGameDate) {
+    const monthName = calendar?.months[currentInGameDate.month - 1]?.name ?? `Month ${currentInGameDate.month}`;
+    const yearLabel = calendar?.year_label ? ` ${calendar.year_label}` : "";
+    inGameDateLabel = `${monthName} ${currentInGameDate.day}, ${currentInGameDate.year}${yearLabel}`;
+  }
 
   // Countdown
   let countdownLabel: string | null = null;
@@ -90,6 +101,12 @@ export default async function CampaignDashboardPage({
                   <p className="text-sm text-muted-foreground">
                     {campaign.system ? `${campaign.system} Campaign` : "Campaign"}
                   </p>
+                  {inGameDateLabel && (
+                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Scroll className="h-3.5 w-3.5 shrink-0" />
+                      {inGameDateLabel}
+                    </p>
+                  )}
                 </div>
               </div>
               {nextSession && countdownLabel && (
