@@ -38,6 +38,7 @@ export async function getEventWithCampaignData(
     end_date: globalEvent.end_date,
     description: globalEvent.description,
     private_notes: globalEvent.private_notes,
+    image_url: globalEvent.image_url,
   };
 }
 
@@ -152,6 +153,7 @@ async function enrichCampaignEvents(
         end_date: ge.end_date,
         description: ge.description,
         private_notes: ge.private_notes,
+        image_url: ge.image_url,
       };
     })
     .filter((e): e is CampaignEvent => e !== null);

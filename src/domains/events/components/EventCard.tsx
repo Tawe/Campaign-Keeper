@@ -40,14 +40,24 @@ export function EventCard({ event, campaignId, calendar, variant = "row" }: Prop
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-3">
                 <p className="font-medium text-white drop-shadow truncate">{event.title}</p>
-                {event.event_type && (
-                  <Badge
-                    variant="outline"
-                    className="mt-1 border-white/20 bg-black/30 text-xs text-white/80 backdrop-blur-sm"
-                  >
-                    {event.event_type}
-                  </Badge>
-                )}
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {event.event_type && (
+                    <Badge
+                      variant="outline"
+                      className="border-white/20 bg-black/30 text-xs text-white/80 backdrop-blur-sm"
+                    >
+                      {event.event_type}
+                    </Badge>
+                  )}
+                  {dateRange && (
+                    <Badge
+                      variant="outline"
+                      className="border-white/20 bg-black/30 text-xs text-white/80 backdrop-blur-sm"
+                    >
+                      {dateRange}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </>
           ) : (
@@ -58,12 +68,9 @@ export function EventCard({ event, campaignId, calendar, variant = "row" }: Prop
                   <Badge variant="outline" className="text-xs">{event.event_type}</Badge>
                 )}
                 {dateRange && (
-                  <span className="text-xs text-muted-foreground self-center">{dateRange}</span>
+                  <Badge variant="outline" className="text-xs text-muted-foreground">{dateRange}</Badge>
                 )}
               </div>
-              {event.description && (
-                <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{event.description}</p>
-              )}
             </div>
           )}
         </div>
