@@ -49,7 +49,7 @@ export async function GET(
     );
   }
 
-  const portraitPath = doc.data()?.portraitPath as string | undefined;
+  const portraitPath = (doc.data()?.portraitPath ?? doc.data()?.imagePath) as string | undefined;
   if (!portraitPath) {
     return new NextResponse("Not found", { status: 404 });
   }
