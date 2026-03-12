@@ -16,6 +16,8 @@ function ts(val: unknown): string {
 
 export function toCampaign(doc: DocumentSnapshot): Campaign {
   const d = doc.data()!;
+  const imageVersion = encodeURIComponent(ts(d.updatedAt));
+  const image_url = d.imagePath ? `/api/portraits/campaign/${doc.id}?v=${imageVersion}` : null;
   return {
     id: doc.id,
     user_id: d.userId,
@@ -26,6 +28,7 @@ export function toCampaign(doc: DocumentSnapshot): Campaign {
     player_user_ids: d.playerUserIds ?? [],
     schedule_cadence: d.scheduleCadence ?? null,
     reminder_days_before: typeof d.reminderDaysBefore === "number" ? d.reminderDaysBefore : null,
+    image_url,
     created_at: ts(d.createdAt),
     updated_at: ts(d.updatedAt),
   };

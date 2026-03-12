@@ -27,6 +27,7 @@ export interface Campaign {
   player_user_ids: string[];
   schedule_cadence: string | null;
   reminder_days_before: number | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }

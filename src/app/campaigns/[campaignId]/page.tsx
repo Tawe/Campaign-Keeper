@@ -11,7 +11,9 @@ import { getNextScheduledSession } from "@/domains/schedule/queries";
 import { ThreadItem } from "@/domains/threads/components/ThreadItem";
 import { DeleteCampaignButton } from "@/domains/campaigns/components/DeleteCampaignButton";
 import { InviteLinkButton } from "@/domains/campaigns/components/InviteLinkButton";
+import { CampaignImageEditor } from "@/domains/campaigns/components/CampaignImageEditor";
 import { Portrait } from "@/components/shared/Portrait";
+import Image from "next/image";
 import { Panel } from "@/components/ui/panel";
 import { StatTile } from "@/components/ui/stat-tile";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -71,7 +73,19 @@ export default async function CampaignDashboardPage({
     <div className="px-6 py-8">
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <main className="space-y-10">
-          <Panel className="rounded-xl p-6">
+          <Panel className="rounded-xl overflow-hidden">
+            {campaign.image_url && (
+              <div className="relative h-40 w-full sm:h-52">
+                <Image
+                  src={campaign.image_url}
+                  alt={campaign.name}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+            )}
+            <div className="p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-3">
                 <Link
@@ -117,6 +131,10 @@ export default async function CampaignDashboardPage({
                   </Link>
                 </PrimaryButton>
               </div>
+            </div>
+            <div className="border-t border-border/50 px-6 py-4">
+              <CampaignImageEditor campaignId={campaignId} imageUrl={campaign.image_url} />
+            </div>
             </div>
           </Panel>
 

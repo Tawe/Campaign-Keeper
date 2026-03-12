@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import { EVENTS_COL, LOCATIONS_COL, NPCS_COL, PLAYERS_COL } from "@/lib/firebase/db";
+import { CAMPAIGNS_COL, EVENTS_COL, LOCATIONS_COL, NPCS_COL, PLAYERS_COL } from "@/lib/firebase/db";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getPortraitObject } from "@/lib/storage/s3";
 
@@ -9,6 +9,7 @@ const COLLECTIONS = {
   player: PLAYERS_COL,
   location: LOCATIONS_COL,
   event: EVENTS_COL,
+  campaign: CAMPAIGNS_COL,
 } as const;
 
 export async function GET(

@@ -9,6 +9,7 @@ import { requireOwnedCampaign, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGNS_COL, PLAYERS_COL } from "@/lib/firebase/db";
 import { assertMaxLength, MAX_NAME_LENGTH } from "@/lib/validation";
 import { toCampaign } from "@/lib/firebase/converters";
+import { handlePortraitUpdate } from "@/lib/storage/s3";
 
 export async function createCampaign(formData: FormData) {
   const user = await requireUser();
@@ -56,6 +57,22 @@ export async function updateCampaign(id: string, formData: FormData) {
   revalidatePath(`/campaigns/${id}`);
   revalidatePath("/");
   revalidatePath("/app/dashboard");
+}
+
+export async function updateCampaignImage(campaignId: string, value: string) {
+  await requireOwnedCampaign(campaignId);
+
+  const db = adminDb();
+  const doc = await db.collection(CAMPAIGNS_COL).doc(campaignId).get();
+  const previousImagePath = (doc.data()?.imagePath as string | null) ?? null;
+  const { portraitPath } = await handlePortraitUpdate("campaign", campaignId, value, previousImagePath);
+
+  await db.collection(CAMPAIGNS_COL).doc(campaignId).update({
+    imagePath: portraitPath,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}`);
 }
 
 export async function deleteCampaign(id: string) {
