@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Users, MapPin, Shield, Scroll } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
-import { getUserCampaigns, getLatestSessionDates } from "@/domains/campaigns/queries";
+import { getUserCampaigns, getLatestSessionDates, getNextScheduledDates } from "@/domains/campaigns/queries";
 import { getPlayerMemberships } from "@/domains/players/queries";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { SecondaryButton } from "@/components/ui/secondary-button";
@@ -50,8 +50,12 @@ export default async function DashboardPage() {
   ]);
 
   const campaignIds = campaigns.map((c) => c.id);
-  const latestSessions =
-    campaignIds.length > 0 ? await getLatestSessionDates(user.uid, campaignIds) : {};
+  const [latestSessions, nextSessions] = campaignIds.length > 0
+    ? await Promise.all([
+        getLatestSessionDates(user.uid, campaignIds),
+        getNextScheduledDates(campaignIds),
+      ])
+    : [{}, {}];
 
   // Campaigns where this user is a player (exclude campaigns they also DM)
   const dmCampaignIds = new Set(campaigns.map((c) => c.id));
@@ -123,6 +127,7 @@ export default async function DashboardPage() {
                 key={campaign.id}
                 campaign={campaign}
                 lastSessionDate={latestSessions[campaign.id] ?? null}
+                nextSessionDate={nextSessions[campaign.id] ?? null}
               />
             ))}
           </div>

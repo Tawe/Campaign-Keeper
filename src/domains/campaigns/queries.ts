@@ -7,6 +7,7 @@ import {
   CAMPAIGN_LOCATIONS_COL,
   NPC_MENTIONS_COL,
   PLAYERS_COL,
+  SCHEDULED_SESSIONS_COL,
   SESSIONS_COL,
 } from "@/lib/firebase/db";
 import type { Campaign, NpcWithLastMention } from "@/types";
@@ -63,6 +64,26 @@ export async function getLatestSessionDates(userId: string, campaignIds: string[
   }
 
   return latestSessions;
+}
+
+export async function getNextScheduledDates(campaignIds: string[]): Promise<Record<string, string>> {
+  if (campaignIds.length === 0) return {};
+  const today = new Date().toISOString().slice(0, 10);
+  const results: Record<string, string> = {};
+  await Promise.all(
+    campaignIds.map(async (id) => {
+      const snap = await adminDb()
+        .collection(SCHEDULED_SESSIONS_COL)
+        .where("campaignId", "==", id)
+        .where("status", "==", "upcoming")
+        .where("date", ">=", today)
+        .orderBy("date", "asc")
+        .limit(1)
+        .get();
+      if (!snap.empty) results[id] = snap.docs[0].data().date as string;
+    })
+  );
+  return results;
 }
 
 export async function getCampaignCounts(campaignId: string): Promise<{ playerCount: number; locationCount: number }> {
