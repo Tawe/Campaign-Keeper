@@ -32,24 +32,17 @@ export default async function GlobalLocationsPage() {
         <div className="space-y-2">
           {locations.map((loc) => {
             const campaigns = locationCampaigns.get(loc.id) ?? [];
-            const firstCampaignId = campaigns[0]?.campaignId;
             return (
               <div
                 key={loc.id}
                 className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
               >
-                {firstCampaignId ? (
-                  <Link
-                    href={`/campaigns/${firstCampaignId}/locations/${loc.id}?from=vault`}
-                    className="min-w-0 flex-1 hover:opacity-80"
-                  >
-                    <p className="font-medium text-foreground truncate">{loc.name}</p>
-                  </Link>
-                ) : (
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{loc.name}</p>
-                  </div>
-                )}
+                <Link
+                  href={`/app/locations/${loc.id}`}
+                  className="min-w-0 flex-1 hover:opacity-80"
+                >
+                  <p className="font-medium text-foreground truncate">{loc.name}</p>
+                </Link>
                 <div className="flex flex-wrap gap-1.5 justify-end shrink-0 items-center">
                   <VaultDeleteButton
                     entityName={loc.name}

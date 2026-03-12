@@ -32,30 +32,20 @@ export default async function GlobalEventsPage() {
         <div className="space-y-2">
           {events.map((event) => {
             const campaignIds = eventCampaigns.get(event.id) ?? [];
-            const firstCampaignId = campaignIds[0];
             return (
               <div
                 key={event.id}
                 className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
               >
-                {firstCampaignId ? (
-                  <Link
-                    href={`/campaigns/${firstCampaignId}/events/${event.id}?from=vault`}
-                    className="min-w-0 flex-1 hover:opacity-80"
-                  >
-                    <p className="font-medium text-foreground truncate">{event.title}</p>
-                    {event.event_type && (
-                      <p className="text-xs text-muted-foreground">{event.event_type}</p>
-                    )}
-                  </Link>
-                ) : (
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{event.title}</p>
-                    {event.event_type && (
-                      <p className="text-xs text-muted-foreground">{event.event_type}</p>
-                    )}
-                  </div>
-                )}
+                <Link
+                  href={`/app/events/${event.id}`}
+                  className="min-w-0 flex-1 hover:opacity-80"
+                >
+                  <p className="font-medium text-foreground truncate">{event.title}</p>
+                  {event.event_type && (
+                    <p className="text-xs text-muted-foreground">{event.event_type}</p>
+                  )}
+                </Link>
 
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
                   <VaultDeleteButton

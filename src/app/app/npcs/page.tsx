@@ -40,26 +40,18 @@ export default async function GlobalNpcsPage() {
         <div className="space-y-2">
           {npcs.map((npc) => {
             const campaigns = npcCampaigns.get(npc.id) ?? [];
-            const firstCampaignId = campaigns[0]?.campaignId;
             return (
               <div
                 key={npc.id}
                 className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
               >
-                {firstCampaignId ? (
-                  <Link
-                    href={`/campaigns/${firstCampaignId}/npcs/${npc.id}?from=vault`}
-                    className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80"
-                  >
-                    <Portrait src={npc.portrait_url} alt={npc.name} className="h-10 w-10 shrink-0" />
-                    <p className="font-medium text-foreground truncate">{npc.name}</p>
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <Portrait src={npc.portrait_url} alt={npc.name} className="h-10 w-10 shrink-0" />
-                    <p className="font-medium text-foreground truncate">{npc.name}</p>
-                  </div>
-                )}
+                <Link
+                  href={`/app/npcs/${npc.id}`}
+                  className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80"
+                >
+                  <Portrait src={npc.portrait_url} alt={npc.name} className="h-10 w-10 shrink-0" />
+                  <p className="font-medium text-foreground truncate">{npc.name}</p>
+                </Link>
 
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
                   <VaultDeleteButton

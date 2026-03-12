@@ -32,30 +32,20 @@ export default async function GlobalFactionsPage() {
         <div className="space-y-2">
           {factions.map((faction) => {
             const campaigns = factionCampaigns.get(faction.id) ?? [];
-            const firstCampaignId = campaigns[0]?.campaignId;
             return (
               <div
                 key={faction.id}
                 className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3"
               >
-                {firstCampaignId ? (
-                  <Link
-                    href={`/campaigns/${firstCampaignId}/factions/${faction.id}?from=vault`}
-                    className="min-w-0 flex-1 hover:opacity-80"
-                  >
-                    <p className="font-medium text-foreground truncate">{faction.name}</p>
-                    {faction.faction_type && (
-                      <p className="text-xs text-muted-foreground">{faction.faction_type}</p>
-                    )}
-                  </Link>
-                ) : (
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{faction.name}</p>
-                    {faction.faction_type && (
-                      <p className="text-xs text-muted-foreground">{faction.faction_type}</p>
-                    )}
-                  </div>
-                )}
+                <Link
+                  href={`/app/factions/${faction.id}`}
+                  className="min-w-0 flex-1 hover:opacity-80"
+                >
+                  <p className="font-medium text-foreground truncate">{faction.name}</p>
+                  {faction.faction_type && (
+                    <p className="text-xs text-muted-foreground">{faction.faction_type}</p>
+                  )}
+                </Link>
 
                 <div className="flex flex-col gap-1.5 items-end shrink-0">
                   <VaultDeleteButton
