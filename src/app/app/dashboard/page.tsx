@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         getNextScheduledDates(campaignIds),
         getPlayerCounts(campaignIds),
       ])
-    : [{}, {}, {}];
+    : [{} as Record<string, string>, {} as Record<string, string>, {} as Record<string, number>];
 
   // Campaigns where this user is a player (exclude campaigns they also DM)
   const dmCampaignIds = new Set(campaigns.map((c) => c.id));
