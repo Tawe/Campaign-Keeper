@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { sendSignInLinkToEmail } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase/app";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +16,18 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`;
-
     try {
-      await sendSignInLinkToEmail(getFirebaseAuth(), email, {
-        url: callbackUrl,
-        handleCodeInApp: true,
+      const res = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to send link");
+      }
+
       // Store email so the callback page can complete sign-in
       localStorage.setItem("emailForSignIn", email);
       setSent(true);
