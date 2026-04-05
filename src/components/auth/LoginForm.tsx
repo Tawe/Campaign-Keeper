@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { normalizeMagicLinkEmail } from "@/lib/auth/emailLink";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -15,12 +16,13 @@ export function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const normalizedEmail = normalizeMagicLinkEmail(email);
 
     try {
       const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       if (!res.ok) {
@@ -29,7 +31,8 @@ export function LoginForm() {
       }
 
       // Store email so the callback page can complete sign-in
-      localStorage.setItem("emailForSignIn", email);
+      localStorage.setItem("emailForSignIn", normalizedEmail);
+      setEmail(normalizedEmail);
       setSent(true);
     } catch (err: unknown) {
       setError((err as { message?: string }).message ?? "Failed to send link");
