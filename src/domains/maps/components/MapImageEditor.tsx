@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ImagePlus, Trash2 } from "lucide-react";
+import { fileToProcessedFile } from "@/components/shared/image-upload";
 import { Button } from "@/components/ui/button";
 
 interface MapImageEditorProps {
@@ -49,8 +50,13 @@ export function MapImageEditor({ mapId, campaignId, imageUrl }: MapImageEditorPr
 
     startTransition(async () => {
       try {
+        const processedFile = await fileToProcessedFile(file, {
+          maxDimension: 2800,
+          mimeType: "image/webp",
+          quality: 0.92,
+        });
         const formData = new FormData();
-        formData.set("file", file);
+        formData.set("file", processedFile);
         formData.set("campaignId", campaignId);
         const response = await fetch(`/api/maps/${mapId}/image`, {
           method: "POST",
