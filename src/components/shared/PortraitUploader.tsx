@@ -6,12 +6,19 @@ import { ImagePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fileToDataUrl } from "@/components/shared/image-upload";
 
+interface PortraitUploaderOptions {
+  maxDimension?: number;
+  mimeType?: "image/jpeg" | "image/webp" | "image/png";
+  quality?: number;
+}
+
 interface PortraitUploaderProps {
   label: string;
   value: string | null;
   onChange: (value: string | null) => void;
   description?: string;
   showPreview?: boolean;
+  uploadOptions?: PortraitUploaderOptions;
 }
 
 export function PortraitUploader({
@@ -20,6 +27,7 @@ export function PortraitUploader({
   onChange,
   description,
   showPreview = true,
+  uploadOptions,
 }: PortraitUploaderProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,7 +41,7 @@ export function PortraitUploader({
     setLoading(true);
     setError(null);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await fileToDataUrl(file, uploadOptions);
       onChange(dataUrl);
     } catch {
       setError("Could not process image.");

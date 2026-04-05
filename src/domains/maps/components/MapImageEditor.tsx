@@ -39,7 +39,12 @@ export function MapImageEditor({ mapId, campaignId, imageUrl }: MapImageEditorPr
       value={draft}
       onChange={handleChange}
       showPreview={false}
-      description={isPending ? "Saving…" : "Upload the map image used for pin placement."}
+      description={isPending ? "Saving…" : "Upload the map image used for pin placement. High-resolution uploads are preserved for readability."}
+      uploadOptions={{
+        maxDimension: 2800,
+        mimeType: "image/webp",
+        quality: 0.92,
+      }}
     />
   );
 }

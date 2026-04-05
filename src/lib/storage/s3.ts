@@ -17,7 +17,7 @@ const ALLOWED_MIME_TYPES = new Map([
   ["image/webp", "webp"],
 ]);
 
-const MAX_PORTRAIT_BYTES = 2 * 1024 * 1024;
+const MAX_PORTRAIT_BYTES = 8 * 1024 * 1024;
 
 let s3Client: S3Client | null = null;
 

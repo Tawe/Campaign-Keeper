@@ -1,4 +1,13 @@
-export async function fileToDataUrl(file: File): Promise<string> {
+interface ImageUploadOptions {
+  maxDimension?: number;
+  mimeType?: "image/jpeg" | "image/webp" | "image/png";
+  quality?: number;
+}
+
+export async function fileToDataUrl(
+  file: File,
+  options: ImageUploadOptions = {},
+): Promise<string> {
   const imageUrl = URL.createObjectURL(file);
 
   try {
@@ -9,8 +18,8 @@ export async function fileToDataUrl(file: File): Promise<string> {
       el.src = imageUrl;
     });
 
-    const maxSize = 1200;
-    const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+    const maxDimension = options.maxDimension ?? 1200;
+    const scale = Math.min(maxDimension / img.width, maxDimension / img.height, 1);
     const width = Math.max(1, Math.round(img.width * scale));
     const height = Math.max(1, Math.round(img.height * scale));
 
@@ -22,7 +31,13 @@ export async function fileToDataUrl(file: File): Promise<string> {
     if (!ctx) throw new Error("Could not read image");
 
     ctx.drawImage(img, 0, 0, width, height);
-    return canvas.toDataURL("image/jpeg", 0.82);
+    const mimeType = options.mimeType ?? "image/jpeg";
+    const quality = options.quality ?? 0.82;
+
+    if (mimeType === "image/png") {
+      return canvas.toDataURL(mimeType);
+    }
+    return canvas.toDataURL(mimeType, quality);
   } finally {
     URL.revokeObjectURL(imageUrl);
   }
