@@ -144,6 +144,20 @@ function parseDataUrl(dataUrl: string) {
   return { mimeType, extension, buffer };
 }
 
+function parseImageBuffer(buffer: Buffer, mimeType: string) {
+  const normalizedMimeType = mimeType.toLowerCase();
+  const extension = ALLOWED_MIME_TYPES.get(normalizedMimeType);
+  if (!extension) {
+    throw new Error("Unsupported image type.");
+  }
+
+  if (buffer.length === 0 || buffer.length > MAX_PORTRAIT_BYTES) {
+    throw new Error("Image is too large.");
+  }
+
+  return { mimeType: normalizedMimeType, extension, buffer };
+}
+
 async function bodyToBuffer(body: unknown): Promise<Buffer> {
   if (!body) {
     throw new Error("Image body is empty.");
@@ -177,17 +191,31 @@ export async function savePortraitDataUrl(
 ) {
   const { mimeType, extension, buffer } = parseDataUrl(dataUrl);
 
-  await moderateImageBuffer(buffer);
+  return saveImageBuffer(kind, id, buffer, mimeType, extension);
+}
 
-  const path = `portraits/${kind}/${id}/${randomUUID()}.${extension}`;
+export async function saveImageBuffer(
+  kind: "player" | "npc" | "location" | "event" | "character" | "campaign" | "faction" | "map",
+  id: string,
+  inputBuffer: Buffer,
+  inputMimeType: string,
+  knownExtension?: string,
+) {
+  const parsed = knownExtension
+    ? { mimeType: inputMimeType, extension: knownExtension, buffer: inputBuffer }
+    : parseImageBuffer(inputBuffer, inputMimeType);
+
+  await moderateImageBuffer(parsed.buffer);
+
+  const path = `portraits/${kind}/${id}/${randomUUID()}.${parsed.extension}`;
 
   try {
     await getS3Client().send(
       new PutObjectCommand({
         Bucket: getBucketName(),
         Key: path,
-        Body: buffer,
-        ContentType: mimeType,
+        Body: parsed.buffer,
+        ContentType: parsed.mimeType,
         CacheControl: "private, max-age=3600",
       })
     );
