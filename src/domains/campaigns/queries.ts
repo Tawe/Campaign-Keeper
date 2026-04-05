@@ -138,6 +138,7 @@ export async function getCampaignNpcIndex(
           name: d.npcName,
           disposition: d.npcDisposition ?? null,
           portrait_url: null,
+          gallery_images: [],
           stats_link: null,
           status: null,
           last_scene: null,

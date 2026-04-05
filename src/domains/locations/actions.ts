@@ -5,13 +5,36 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_LOCATIONS_COL, LOCATION_VISITS_COL, LOCATIONS_COL } from "@/lib/firebase/db";
-import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
+import { deletePortrait, handleGalleryAdd, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
+  assertMaxItems,
   MAX_NAME_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
   MAX_LONG_TEXT_LENGTH,
+  MAX_ARRAY_ITEMS,
 } from "@/lib/validation";
+
+const MAX_GALLERY_IMAGES = Math.min(MAX_ARRAY_ITEMS, 24);
+type GalleryEntry = string | { path: string; caption: string | null };
+
+function normalizeGalleryEntries(value: unknown): GalleryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<GalleryEntry[]>((entries, item) => {
+    if (typeof item === "string" && item.trim()) {
+      entries.push(item);
+      return entries;
+    }
+    if (!item || typeof item !== "object") return entries;
+    const entry = item as { path?: unknown; caption?: unknown };
+    if (typeof entry.path !== "string" || !entry.path.trim()) return entries;
+    entries.push({
+      path: entry.path.trim(),
+      caption: typeof entry.caption === "string" && entry.caption.trim() ? entry.caption.trim() : null,
+    });
+    return entries;
+  }, []);
+}
 
 export async function createLocation(campaignId: string, name: string) {
   const user = await requireUser();
@@ -31,6 +54,7 @@ export async function createLocation(campaignId: string, name: string) {
     name: trimmed,
     nameLower,
     imagePath: null,
+    galleryPaths: [],
     parentLocationId: null,
     terrain: [],
     createdAt: now,
@@ -188,6 +212,80 @@ export async function updateLocationParent(
   revalidatePath(`/campaigns/${campaignId}/locations/${locationId}`);
 }
 
+export async function addLocationGalleryImage(locationId: string, campaignId: string, value: string) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("location", locationId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  assertMaxItems([...currentEntries, "next"], MAX_GALLERY_IMAGES, "Location gallery");
+  const nextPath = await handleGalleryAdd("location", locationId, value);
+
+  await db.collection(LOCATIONS_COL).doc(locationId).update({
+    galleryPaths: [...currentEntries, { path: nextPath, caption: null }],
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}/locations/${locationId}`);
+  revalidatePath(`/campaigns/${campaignId}/locations`);
+  revalidatePath(`/app/locations/${locationId}`);
+  revalidatePath(`/app/locations`);
+}
+
+export async function removeLocationGalleryImage(locationId: string, campaignId: string, index: number) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("location", locationId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  if (index < 0 || index >= currentEntries.length) {
+    throw new Error("Gallery image not found.");
+  }
+
+  const nextEntries = currentEntries.filter((_, currentIndex) => currentIndex !== index);
+  const removed = currentEntries[index];
+  await db.collection(LOCATIONS_COL).doc(locationId).update({
+    galleryPaths: nextEntries,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  await deletePortrait(typeof removed === "string" ? removed : removed.path);
+
+  revalidatePath(`/campaigns/${campaignId}/locations/${locationId}`);
+  revalidatePath(`/campaigns/${campaignId}/locations`);
+  revalidatePath(`/app/locations/${locationId}`);
+  revalidatePath(`/app/locations`);
+}
+
+export async function updateLocationGalleryCaption(locationId: string, campaignId: string, index: number, caption: string) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("location", locationId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  if (index < 0 || index >= currentEntries.length) {
+    throw new Error("Gallery image not found.");
+  }
+
+  const trimmed = caption.trim();
+  if (trimmed) assertMaxLength(trimmed, MAX_SHORT_TEXT_LENGTH, "Caption");
+
+  const nextEntries = currentEntries.map((entry, currentIndex) => {
+    if (currentIndex !== index) return entry;
+    const path = typeof entry === "string" ? entry : entry.path;
+    return { path, caption: trimmed || null };
+  });
+
+  await db.collection(LOCATIONS_COL).doc(locationId).update({
+    galleryPaths: nextEntries,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}/locations/${locationId}`);
+  revalidatePath(`/campaigns/${campaignId}/locations`);
+  revalidatePath(`/app/locations/${locationId}`);
+  revalidatePath(`/app/locations`);
+}
+
 export async function removeLocationFromCampaign(locationId: string, campaignId: string) {
   const { user } = await requireOwnedCampaign(campaignId);
 
@@ -215,6 +313,8 @@ export async function removeLocationFromCampaign(locationId: string, campaignId:
 export async function deleteLocationPermanently(locationId: string) {
   const { doc } = await requireOwnedDoc("location", locationId);
   const imagePath = (doc.data()?.imagePath as string | null) ?? null;
+  const galleryPaths = normalizeGalleryEntries(doc.data()?.galleryPaths)
+    .map((entry) => typeof entry === "string" ? entry : entry.path);
 
   const db = adminDb();
   const batch = db.batch();
@@ -233,6 +333,7 @@ export async function deleteLocationPermanently(locationId: string) {
 
   await batch.commit();
   await deletePortrait(imagePath);
+  await Promise.all(galleryPaths.map((path) => deletePortrait(path)));
 
   revalidatePath(`/app/locations`);
 }

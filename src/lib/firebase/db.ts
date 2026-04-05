@@ -89,6 +89,7 @@ export interface NpcDoc {
   name: string;
   nameLower: string; // for case-insensitive dedup queries
   portraitPath: string | null;
+  galleryPaths: Array<string | { path: string; caption: string | null }>;
   portraitUrl: string | null;
   statsLink: string | null;
   publicInfo: string | null;   // library notes shared across campaigns
@@ -119,6 +120,7 @@ export interface LocationDoc {
   name: string;
   nameLower: string;
   imagePath: string | null;
+  galleryPaths: Array<string | { path: string; caption: string | null }>;
   parentLocationId: string | null;
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;

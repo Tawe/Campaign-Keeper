@@ -6,10 +6,12 @@ import { getNpcWithCampaignData, getNpcMentionHistory } from "@/domains/npcs/que
 import { getEventsForNpc } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { NpcProfileEditor } from "@/domains/npcs/components/NpcProfileEditor";
+import { NpcGalleryEditor } from "@/domains/npcs/components/NpcGalleryEditor";
 import { NpcDeleteActions } from "@/domains/npcs/components/NpcDeleteActions";
 import { updateNpcInfo } from "@/domains/npcs/actions";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
 import { NpcClassEditor } from "@/domains/npcs/components/NpcClassEditor";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { MetaStrip, SectionFrame, StackedList } from "@/components/shared/editorial";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { VisibilityBadge } from "@/components/shared/VisibilityBadge";
@@ -69,8 +71,12 @@ export default async function NpcDetailPage({
       />
 
       <div className="paper-panel space-y-5 px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Portrait src={npc.portrait_url} alt={npc.name} className="h-28 w-28 shrink-0" />
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+          <Portrait
+            src={npc.portrait_url}
+            alt={npc.name}
+            className="h-56 w-full shrink-0 rounded-3xl sm:h-72 lg:h-64 lg:w-64"
+          />
           <div className="flex-1 space-y-3">
             <MetaStrip
               items={[
@@ -86,6 +92,21 @@ export default async function NpcDetailPage({
                 npc.last_scene ? `Last seen: ${npc.last_scene}` : null,
               ]}
             />
+            {(npc.race || npc.sex || npc.age || npc.alignment || npc.npc_class.length > 0) && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {npc.race ? <Badge variant="outline">{npc.race}</Badge> : null}
+                  {npc.sex ? <Badge variant="outline">{npc.sex}</Badge> : null}
+                  {npc.age ? <Badge variant="outline">{npc.age}</Badge> : null}
+                  {npc.alignment ? <Badge variant="outline">{npc.alignment}</Badge> : null}
+                </div>
+                {npc.npc_class.length > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {npc.npc_class.map((entry) => `${entry.name}${entry.level ? ` ${entry.level}` : ""}`).join(" / ")}
+                  </p>
+                ) : null}
+              </div>
+            )}
             <NpcProfileEditor npcId={npcId} campaignId={campaignId} portraitUrl={npc.portrait_url} />
           </div>
         </div>
@@ -263,6 +284,17 @@ export default async function NpcDetailPage({
             </div>
           )}
         </SectionFrame>
+
+        <div className="space-y-4">
+          <NpcGalleryEditor npcId={npcId} campaignId={campaignId} images={npc.gallery_images} />
+          <ImageGallerySection
+            title="Gallery"
+            eyebrow="Reference Images"
+            description="Alternate art, screenshots, minis, and other images for this NPC."
+            images={npc.gallery_images}
+            emptyMessage="No gallery images yet."
+          />
+        </div>
       </div>
     </div>
   );

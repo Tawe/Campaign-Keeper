@@ -5,13 +5,36 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireOwnedCampaign, requireOwnedDoc, requireUser } from "@/lib/auth/actions";
 import { CAMPAIGN_NPCS_COL, NPC_MENTIONS_COL, NPCS_COL } from "@/lib/firebase/db";
-import { deletePortrait, handlePortraitUpdate } from "@/lib/storage/s3";
+import { deletePortrait, handleGalleryAdd, handlePortraitUpdate } from "@/lib/storage/s3";
 import {
   assertMaxLength,
+  assertMaxItems,
   MAX_NAME_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
   MAX_LONG_TEXT_LENGTH,
+  MAX_ARRAY_ITEMS,
 } from "@/lib/validation";
+
+const MAX_GALLERY_IMAGES = Math.min(MAX_ARRAY_ITEMS, 24);
+type GalleryEntry = string | { path: string; caption: string | null };
+
+function normalizeGalleryEntries(value: unknown): GalleryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<GalleryEntry[]>((entries, item) => {
+    if (typeof item === "string" && item.trim()) {
+      entries.push(item);
+      return entries;
+    }
+    if (!item || typeof item !== "object") return entries;
+    const entry = item as { path?: unknown; caption?: unknown };
+    if (typeof entry.path !== "string" || !entry.path.trim()) return entries;
+    entries.push({
+      path: entry.path.trim(),
+      caption: typeof entry.caption === "string" && entry.caption.trim() ? entry.caption.trim() : null,
+    });
+    return entries;
+  }, []);
+}
 
 export async function createNpc(campaignId: string, name: string) {
   const user = await requireUser();
@@ -31,6 +54,7 @@ export async function createNpc(campaignId: string, name: string) {
     name: trimmed,
     nameLower,
     portraitPath: null,
+    galleryPaths: [],
     portraitUrl: null,
     statsLink: null,
     publicInfo: null,
@@ -223,6 +247,80 @@ export async function updateNpcInfo(
   revalidatePath(`/campaigns/${campaignId}/npcs`);
 }
 
+export async function addNpcGalleryImage(npcId: string, campaignId: string, value: string) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("npc", npcId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  assertMaxItems([...currentEntries, "next"], MAX_GALLERY_IMAGES, "NPC gallery");
+  const nextPath = await handleGalleryAdd("npc", npcId, value);
+
+  await db.collection(NPCS_COL).doc(npcId).update({
+    galleryPaths: [...currentEntries, { path: nextPath, caption: null }],
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}/npcs/${npcId}`);
+  revalidatePath(`/campaigns/${campaignId}/npcs`);
+  revalidatePath(`/app/npcs/${npcId}`);
+  revalidatePath(`/app/npcs`);
+}
+
+export async function removeNpcGalleryImage(npcId: string, campaignId: string, index: number) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("npc", npcId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  if (index < 0 || index >= currentEntries.length) {
+    throw new Error("Gallery image not found.");
+  }
+
+  const nextEntries = currentEntries.filter((_, currentIndex) => currentIndex !== index);
+  const removed = currentEntries[index];
+  await db.collection(NPCS_COL).doc(npcId).update({
+    galleryPaths: nextEntries,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  await deletePortrait(typeof removed === "string" ? removed : removed.path);
+
+  revalidatePath(`/campaigns/${campaignId}/npcs/${npcId}`);
+  revalidatePath(`/campaigns/${campaignId}/npcs`);
+  revalidatePath(`/app/npcs/${npcId}`);
+  revalidatePath(`/app/npcs`);
+}
+
+export async function updateNpcGalleryCaption(npcId: string, campaignId: string, index: number, caption: string) {
+  await requireOwnedCampaign(campaignId);
+  const { doc } = await requireOwnedDoc("npc", npcId);
+  const db = adminDb();
+  const currentEntries = normalizeGalleryEntries(doc.data()?.galleryPaths);
+
+  if (index < 0 || index >= currentEntries.length) {
+    throw new Error("Gallery image not found.");
+  }
+
+  const trimmed = caption.trim();
+  if (trimmed) assertMaxLength(trimmed, MAX_SHORT_TEXT_LENGTH, "Caption");
+
+  const nextEntries = currentEntries.map((entry, currentIndex) => {
+    if (currentIndex !== index) return entry;
+    const path = typeof entry === "string" ? entry : entry.path;
+    return { path, caption: trimmed || null };
+  });
+
+  await db.collection(NPCS_COL).doc(npcId).update({
+    galleryPaths: nextEntries,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath(`/campaigns/${campaignId}/npcs/${npcId}`);
+  revalidatePath(`/campaigns/${campaignId}/npcs`);
+  revalidatePath(`/app/npcs/${npcId}`);
+  revalidatePath(`/app/npcs`);
+}
+
 export async function removeNpcFromCampaign(npcId: string, campaignId: string) {
   const { user } = await requireOwnedCampaign(campaignId);
 
@@ -250,6 +348,8 @@ export async function removeNpcFromCampaign(npcId: string, campaignId: string) {
 export async function deleteNpcPermanently(npcId: string) {
   const { doc } = await requireOwnedDoc("npc", npcId);
   const portraitPath = (doc.data()?.portraitPath as string | null) ?? null;
+  const galleryPaths = normalizeGalleryEntries(doc.data()?.galleryPaths)
+    .map((entry) => typeof entry === "string" ? entry : entry.path);
 
   const db = adminDb();
   const batch = db.batch();
@@ -264,6 +364,7 @@ export async function deleteNpcPermanently(npcId: string) {
 
   await batch.commit();
   await deletePortrait(portraitPath);
+  await Promise.all(galleryPaths.map((path) => deletePortrait(path)));
 
   revalidatePath(`/app/npcs`);
 }

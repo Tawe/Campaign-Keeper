@@ -11,6 +11,7 @@ import {
 import { deleteNpcPermanently } from "@/domains/npcs/actions";
 import { Portrait } from "@/components/shared/Portrait";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
@@ -72,8 +73,12 @@ export default async function NpcVaultDetailPage({
         }
       />
 
-      <div className="flex items-start gap-6">
-        <Portrait src={npc.portrait_url} alt={npc.name} className="h-20 w-20 shrink-0" />
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+        <Portrait
+          src={npc.portrait_url}
+          alt={npc.name}
+          className="h-56 w-full shrink-0 rounded-3xl sm:h-52 sm:w-52"
+        />
         <div className="space-y-2 pt-1">
           {(npc.race || npc.sex || npc.age || npc.alignment) && (
             <div className="flex flex-wrap gap-1.5">
@@ -167,6 +172,14 @@ export default async function NpcVaultDetailPage({
           </SectionFrame>
         </>
       )}
+
+      <ImageGallerySection
+        title="Gallery"
+        eyebrow="Reference Images"
+        description="Alternate art and other images saved for this NPC."
+        images={npc.gallery_images}
+        emptyMessage="No gallery images yet."
+      />
     </div>
   );
 }

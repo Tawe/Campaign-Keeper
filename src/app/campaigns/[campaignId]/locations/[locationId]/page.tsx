@@ -14,9 +14,11 @@ import { getEventsForLocation } from "@/domains/events/queries";
 import { EventCard } from "@/domains/events/components/EventCard";
 import { updateLocationInfo } from "@/domains/locations/actions";
 import { LocationImageEditor } from "@/domains/locations/components/LocationImageEditor";
+import { LocationGalleryEditor } from "@/domains/locations/components/LocationGalleryEditor";
 import { LocationDeleteActions } from "@/domains/locations/components/LocationDeleteActions";
 import { LocationParentSelector } from "@/domains/locations/components/LocationParentSelector";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { InlineEditor } from "@/components/shared/InlineEditor";
 import { InlineInputEditor } from "@/components/shared/InlineInputEditor";
 import { SectionFrame, StackedList } from "@/components/shared/editorial";
@@ -69,7 +71,7 @@ export default async function LocationDetailPage({
     <div className="reading-shell space-y-6">
       {/* Header image */}
       {location.image_url && (
-        <div className="relative h-48 w-full overflow-hidden rounded-xl border border-border/80 sm:h-64">
+        <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-border/80 sm:h-80">
           <Image
             src={location.image_url}
             alt={location.name}
@@ -263,6 +265,21 @@ export default async function LocationDetailPage({
           </StackedList>
         )}
       </SectionFrame>
+
+      <div className="space-y-4">
+        <LocationGalleryEditor
+          locationId={locationId}
+          campaignId={campaignId}
+          images={location.gallery_images}
+        />
+        <ImageGallerySection
+          title="Gallery"
+          eyebrow="Maps & Images"
+          description="Maps, landmark art, travel sketches, and other visuals for this location."
+          images={location.gallery_images}
+          emptyMessage="No gallery images yet."
+        />
+      </div>
     </div>
   );
 }

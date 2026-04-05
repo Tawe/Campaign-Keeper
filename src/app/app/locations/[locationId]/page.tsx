@@ -11,6 +11,7 @@ import {
 } from "@/lib/firebase/db";
 import { deleteLocationPermanently } from "@/domains/locations/actions";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { VaultDeleteButton } from "@/components/shared/VaultDeleteButton";
 import { SectionFrame } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,7 @@ export default async function LocationVaultDetailPage({
   return (
     <div className="page-shell max-w-3xl space-y-8">
       {location.image_url && (
-        <div className="relative h-48 w-full overflow-hidden rounded-xl">
+        <div className="relative h-64 w-full overflow-hidden rounded-2xl">
           <Image
             src={location.image_url}
             alt={location.name}
@@ -125,6 +126,14 @@ export default async function LocationVaultDetailPage({
           </SectionFrame>
         </>
       )}
+
+      <ImageGallerySection
+        title="Gallery"
+        eyebrow="Maps & Images"
+        description="Maps, art, and supporting images saved for this location."
+        images={location.gallery_images}
+        emptyMessage="No gallery images yet."
+      />
     </div>
   );
 }

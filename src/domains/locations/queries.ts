@@ -24,18 +24,18 @@ export async function getCampaignLocations(campaignId: string): Promise<Location
   }));
 
   // Batch-fetch global location docs to get image_url and terrain
-  const globalByLocationId = new Map<string, { image_url: string | null; terrain: string[] }>();
+  const globalByLocationId = new Map<string, { image_url: string | null; gallery_images: Location["gallery_images"]; terrain: string[] }>();
   if (locationsSnap.size > 0) {
     const locationIds = locationsSnap.docs.map((d) => d.data().locationId as string);
     const globalRefs = locationIds.map((id) => db.collection(LOCATIONS_COL).doc(id));
     const globalDocs = await db.getAll(...globalRefs);
     globalDocs.forEach((gDoc) => {
       if (!gDoc.exists) return;
-      const gd = gDoc.data()!;
-      const imageVersion = encodeURIComponent(gd.updatedAt?.toDate?.()?.toISOString() ?? "");
+      const location = toLocation(gDoc);
       globalByLocationId.set(gDoc.id, {
-        image_url: gd.imagePath ? `/api/portraits/location/${gDoc.id}?v=${imageVersion}` : null,
-        terrain: Array.isArray(gd.terrain) ? gd.terrain : [],
+        image_url: location.image_url,
+        gallery_images: location.gallery_images,
+        terrain: location.terrain,
       });
     });
   }
@@ -47,6 +47,7 @@ export async function getCampaignLocations(campaignId: string): Promise<Location
     locationMap.set(loc.id, {
       ...loc,
       image_url: global?.image_url ?? null,
+      gallery_images: global?.gallery_images ?? [],
       terrain: global?.terrain ?? [],
       last_visited: "",
       last_session_id: "",

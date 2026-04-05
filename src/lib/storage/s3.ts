@@ -252,3 +252,15 @@ export async function handlePortraitUpdate(
 
   return { portraitPath: nextPortraitPath, portraitUrl: null };
 }
+
+export async function handleGalleryAdd(
+  kind: "npc" | "location",
+  entityId: string,
+  value: string,
+): Promise<string> {
+  if (!value.startsWith("data:")) {
+    throw new Error("Invalid gallery image.");
+  }
+
+  return savePortraitDataUrl(kind, entityId, value);
+}

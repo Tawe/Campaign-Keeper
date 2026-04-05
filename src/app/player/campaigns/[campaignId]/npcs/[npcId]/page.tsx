@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ExternalLink, User } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getNpcWithCampaignData, getNpcMentionHistory } from "@/domains/npcs/queries";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SectionFrame, StackedList } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
@@ -50,13 +51,13 @@ export default async function PlayerNpcDetailPage({
       />
 
       <div className="paper-panel space-y-4 px-5 py-5 sm:px-6">
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-5 sm:flex-row">
           {npc.portrait_url ? (
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+            <div className="relative h-56 w-full shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44">
               <Image src={npc.portrait_url} alt={npc.name} fill unoptimized className="object-cover" />
             </div>
           ) : (
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-muted">
+            <div className="flex h-56 w-full shrink-0 items-center justify-center rounded-2xl bg-muted sm:h-44 sm:w-44">
               <User className="h-10 w-10 text-muted-foreground/30" />
             </div>
           )}
@@ -123,6 +124,14 @@ export default async function PlayerNpcDetailPage({
           </StackedList>
         </SectionFrame>
       )}
+
+      <ImageGallerySection
+        title="Gallery"
+        eyebrow="Reference Images"
+        description="Shared art and other images for this NPC."
+        images={npc.gallery_images}
+        emptyMessage="No gallery images yet."
+      />
     </div>
   );
 }

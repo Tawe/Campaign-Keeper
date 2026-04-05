@@ -14,7 +14,7 @@ const COLLECTIONS = {
 } as const;
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ kind: string; id: string }> }
 ) {
   const user = await getSessionUser();
@@ -50,7 +50,22 @@ export async function GET(
     );
   }
 
-  const portraitPath = (doc.data()?.portraitPath ?? doc.data()?.imagePath) as string | undefined;
+  const indexParam = request.nextUrl.searchParams.get("index");
+  const wantsGallery = request.nextUrl.searchParams.get("gallery") === "1";
+  const galleryIndex = indexParam ? Number.parseInt(indexParam, 10) : null;
+  const galleryPaths = Array.isArray(doc.data()?.galleryPaths)
+    ? (doc.data()?.galleryPaths as unknown[])
+        .flatMap((entry) => {
+          if (typeof entry === "string" && entry.trim().length > 0) return [entry];
+          if (!entry || typeof entry !== "object") return [];
+          const path = (entry as { path?: unknown }).path;
+          return typeof path === "string" && path.trim().length > 0 ? [path] : [];
+        })
+    : [];
+
+  const portraitPath = wantsGallery && galleryIndex !== null
+    ? galleryPaths[galleryIndex]
+    : (doc.data()?.portraitPath ?? doc.data()?.imagePath) as string | undefined;
   if (!portraitPath) {
     return new NextResponse("Not found", { status: 404 });
   }

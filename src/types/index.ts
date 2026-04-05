@@ -3,6 +3,11 @@ export type ThreadStatus = "open" | "resolved";
 export type NpcDisposition = "ally" | "enemy" | "neutral" | "unknown";
 export type CombatDifficulty = "low" | "moderate" | "hard";
 
+export interface GalleryImage {
+  url: string;
+  caption: string | null;
+}
+
 export interface DmReflection {
   plot_advancement: boolean | null;
   key_events: string[];
@@ -83,6 +88,7 @@ export interface Npc {
   name: string;
   disposition: NpcDisposition | null;
   portrait_url: string | null;
+  gallery_images: GalleryImage[];
   stats_link: string | null;
   status: string | null;      // current status, auto-updated from sessions
   last_scene: string | null;  // last known location, auto-updated from sessions
@@ -103,6 +109,7 @@ export interface Location {
   campaign_id: string;
   name: string;
   image_url: string | null;
+  gallery_images: GalleryImage[];
   parent_location_id: string | null;
   terrain: string[];           // type tags e.g. ["Village", "Glacier"]
   public_info: string | null;

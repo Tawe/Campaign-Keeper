@@ -3,7 +3,7 @@
  * Handles Timestamp → ISO string conversion.
  */
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import type { Attendance, Calendar, CampaignEvent, Campaign, ScheduledSession, Session, Thread, Npc, NpcClass, NpcMention, Player, Location, Faction } from "@/types";
+import type { Attendance, Calendar, CampaignEvent, Campaign, ScheduledSession, Session, Thread, Npc, NpcClass, NpcMention, Player, Location, Faction, GalleryImage } from "@/types";
 
 function ts(val: unknown): string {
   if (!val) return new Date().toISOString();
@@ -105,6 +105,34 @@ function parseNpcClasses(npcClass: unknown, level: unknown): NpcClass[] {
   return [];
 }
 
+function buildImageUrl(kind: "npc" | "location" | "campaign" | "faction" | "event" | "player", id: string, version: string, options?: { galleryIndex?: number }) {
+  const params = new URLSearchParams({ v: version });
+  if (typeof options?.galleryIndex === "number") {
+    params.set("gallery", "1");
+    params.set("index", String(options.galleryIndex));
+  }
+  return `/api/portraits/${kind}/${id}?${params.toString()}`;
+}
+
+function galleryImages(kind: "npc" | "location", id: string, version: string, items: unknown): GalleryImage[] {
+  if (!Array.isArray(items)) return [];
+
+  return items.flatMap((item, index) => {
+    if (typeof item === "string" && item.trim().length > 0) {
+      return [{ url: buildImageUrl(kind, id, version, { galleryIndex: index }), caption: null }];
+    }
+
+    if (!item || typeof item !== "object") return [];
+    const entry = item as { path?: unknown; caption?: unknown };
+    if (typeof entry.path !== "string" || entry.path.trim().length === 0) return [];
+
+    return [{
+      url: buildImageUrl(kind, id, version, { galleryIndex: index }),
+      caption: typeof entry.caption === "string" && entry.caption.trim().length > 0 ? entry.caption.trim() : null,
+    }];
+  });
+}
+
 export function toNpc(doc: DocumentSnapshot): Npc {
   const d = doc.data()!;
   const portraitVersion = encodeURIComponent(ts(d.updatedAt));
@@ -112,7 +140,7 @@ export function toNpc(doc: DocumentSnapshot): Npc {
     d.portraitUrl && typeof d.portraitUrl === "string"
       ? d.portraitUrl
       : d.portraitPath
-        ? `/api/portraits/npc/${doc.id}?v=${portraitVersion}`
+        ? buildImageUrl("npc", doc.id, portraitVersion)
         : null;
   return {
     id: doc.id,
@@ -120,6 +148,7 @@ export function toNpc(doc: DocumentSnapshot): Npc {
     name: d.name,
     disposition: d.disposition ?? null,
     portrait_url: portraitUrl,
+    gallery_images: galleryImages("npc", doc.id, portraitVersion, d.galleryPaths),
     stats_link: d.statsLink ?? null,
     status: d.status ?? null,
     last_scene: d.lastScene ?? null,
@@ -144,6 +173,7 @@ export function toCampaignNpc(doc: DocumentSnapshot): Npc {
     name: d.name,
     disposition: d.disposition ?? null,
     portrait_url: null,
+    gallery_images: [],
     stats_link: null,
     status: d.status ?? null,
     last_scene: d.lastScene ?? null,
@@ -163,12 +193,13 @@ export function toCampaignNpc(doc: DocumentSnapshot): Npc {
 export function toLocation(doc: DocumentSnapshot): Location {
   const d = doc.data()!;
   const imageVersion = encodeURIComponent(ts(d.updatedAt));
-  const imageUrl = d.imagePath ? `/api/portraits/location/${doc.id}?v=${imageVersion}` : null;
+  const imageUrl = d.imagePath ? buildImageUrl("location", doc.id, imageVersion) : null;
   return {
     id: doc.id,
     campaign_id: d.campaignId ?? "",
     name: d.name,
     image_url: imageUrl,
+    gallery_images: galleryImages("location", doc.id, imageVersion, d.galleryPaths),
     parent_location_id: d.parentLocationId ?? null,
     terrain: Array.isArray(d.terrain) ? d.terrain : [],
     public_info: d.publicInfo ?? null,
@@ -185,6 +216,7 @@ export function toCampaignLocation(doc: DocumentSnapshot): Location {
     campaign_id: d.campaignId,
     name: d.name,
     image_url: null, // merged from global doc in getLocationWithCampaignData
+    gallery_images: [],
     parent_location_id: d.parentLocationId ?? null,
     terrain: [], // merged from global doc in getLocationWithCampaignData
     public_info: d.publicInfo ?? null,
@@ -233,7 +265,7 @@ export function toPlayer(doc: DocumentSnapshot): Player {
 export function toFaction(doc: DocumentSnapshot): Faction {
   const d = doc.data()!;
   const imageVersion = encodeURIComponent(ts(d.updatedAt));
-  const image_url = d.imagePath ? `/api/portraits/faction/${doc.id}?v=${imageVersion}` : null;
+  const image_url = d.imagePath ? buildImageUrl("faction", doc.id, imageVersion) : null;
   return {
     id: doc.id,
     campaign_id: d.campaignId ?? "",
@@ -296,7 +328,7 @@ function parseInGameDate(val: unknown): { year: number; month: number; day: numb
 export function toEvent(doc: DocumentSnapshot): CampaignEvent {
   const d = doc.data()!;
   const imageVersion = encodeURIComponent(ts(d.updatedAt));
-  const image_url = d.imagePath ? `/api/portraits/event/${doc.id}?v=${imageVersion}` : null;
+  const image_url = d.imagePath ? buildImageUrl("event", doc.id, imageVersion) : null;
   return {
     id: doc.id,
     campaign_id: "",  // filled in merge

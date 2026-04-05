@@ -55,6 +55,7 @@ const npc: Npc = {
   name: "Mira Ashveil",
   disposition: "ally",
   portrait_url: null,
+  gallery_images: [],
   stats_link: null,
   status: null,
   last_scene: null,

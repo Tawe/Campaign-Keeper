@@ -9,6 +9,7 @@ import {
   getLocationPath,
   getSublocations,
 } from "@/domains/locations/queries";
+import { ImageGallerySection } from "@/components/shared/ImageGallerySection";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SectionFrame, StackedList } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +68,7 @@ export default async function PlayerLocationDetailPage({
       />
 
       {location.image_url && (
-        <div className="relative h-48 w-full overflow-hidden rounded-xl sm:h-64">
+        <div className="relative h-64 w-full overflow-hidden rounded-2xl sm:h-80">
           <Image src={location.image_url} alt={location.name} fill unoptimized className="object-cover" />
         </div>
       )}
@@ -135,6 +136,14 @@ export default async function PlayerLocationDetailPage({
           </StackedList>
         </SectionFrame>
       )}
+
+      <ImageGallerySection
+        title="Gallery"
+        eyebrow="Maps & Images"
+        description="Maps, scene art, and other images for this location."
+        images={location.gallery_images}
+        emptyMessage="No gallery images yet."
+      />
     </div>
   );
 }

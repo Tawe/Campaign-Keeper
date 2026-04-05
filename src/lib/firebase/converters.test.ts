@@ -193,8 +193,21 @@ describe("toNpc (global doc)", () => {
     expect(toNpc(doc).portrait_url).toBe("https://example.com/portrait.jpg");
   });
 
-  it("backward-compat: falls back to notes field for private_notes", () => {
+  it("maps npc gallery URLs from galleryPaths", () => {
     const doc = mockDoc("n7", {
+      name: "Gallery NPC",
+      galleryPaths: ["npc/a.jpg", { path: "npc/b.jpg", caption: "Formal portrait" }],
+      updatedAt: null,
+      createdAt: null,
+    });
+    expect(toNpc(doc).gallery_images).toEqual([
+      { url: expect.stringContaining("/api/portraits/npc/n7?"), caption: null },
+      { url: expect.stringContaining("/api/portraits/npc/n7?"), caption: "Formal portrait" },
+    ]);
+  });
+
+  it("backward-compat: falls back to notes field for private_notes", () => {
+    const doc = mockDoc("n8", {
       name: "Old Doc",
       notes: "Legacy private notes",
       createdAt: null,
@@ -380,6 +393,19 @@ describe("toLocation (global doc)", () => {
       updatedAt: null,
     });
     expect(toLocation(doc).image_url).toBeNull();
+  });
+
+  it("maps location gallery URLs from galleryPaths", () => {
+    const doc = mockDoc("l3", {
+      name: "Gallery Location",
+      galleryPaths: ["locations/a.jpg", { path: "locations/b.jpg", caption: "Town map" }],
+      updatedAt: null,
+      createdAt: null,
+    });
+    expect(toLocation(doc).gallery_images).toEqual([
+      { url: expect.stringContaining("/api/portraits/location/l3?"), caption: null },
+      { url: expect.stringContaining("/api/portraits/location/l3?"), caption: "Town map" },
+    ]);
   });
 });
 
