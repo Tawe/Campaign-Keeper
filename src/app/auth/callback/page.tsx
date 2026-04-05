@@ -60,7 +60,12 @@ export default function AuthCallbackPage() {
         body: JSON.stringify({ idToken }),
       });
 
-      if (!res.ok) throw new Error("Failed to create session");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        throw new Error(data?.error ?? "Failed to create session");
+      }
 
       const joinCampaignId = localStorage.getItem("joinCampaignId");
       const joinToken = localStorage.getItem("joinToken");

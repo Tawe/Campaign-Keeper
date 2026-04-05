@@ -6,16 +6,33 @@ const SESSION_COOKIE_NAME = "session";
 // 5 days in ms (Firebase max is 14 days)
 const SESSION_DURATION_MS = 5 * 24 * 60 * 60 * 1000;
 
-function isAllowedOrigin(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
+function normalizeOrigin(value: string | undefined | null) {
+  if (!value) return null;
 
-  const allowed = new Set<string>([request.nextUrl.origin]);
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    allowed.add(process.env.NEXT_PUBLIC_APP_URL);
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedOrigin(request: NextRequest) {
+  const requestOrigin = normalizeOrigin(request.headers.get("origin"));
+  if (!requestOrigin) return true;
+
+  const allowed = new Set<string>();
+  const candidates = [
+    request.nextUrl.origin,
+    process.env.APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeOrigin(candidate);
+    if (normalized) allowed.add(normalized);
   }
 
-  return allowed.has(origin);
+  return allowed.has(requestOrigin);
 }
 
 export async function POST(request: NextRequest) {
@@ -46,7 +63,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Session creation failed:", err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: (err as Error).message ?? "Unauthorized" },
+      { status: 401 }
+    );
   }
 }
 
