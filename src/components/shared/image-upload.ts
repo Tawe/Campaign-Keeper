@@ -57,19 +57,27 @@ export async function fileToProcessedFile(
 ): Promise<File> {
   const img = await loadImage(file);
   const canvas = renderCanvas(img, options);
-  const mimeType = options.mimeType ?? "image/jpeg";
+  const requestedMimeType = options.mimeType ?? "image/jpeg";
   const quality = options.quality ?? 0.82;
 
   const blob = await new Promise<Blob | null>((resolve) => {
-    if (mimeType === "image/png") {
-      canvas.toBlob(resolve, mimeType);
+    if (requestedMimeType === "image/png") {
+      canvas.toBlob(resolve, requestedMimeType);
       return;
     }
-    canvas.toBlob(resolve, mimeType, quality);
+    canvas.toBlob(resolve, requestedMimeType, quality);
   });
 
-  if (!blob) throw new Error("Could not process image.");
+  if (!blob || !blob.type) {
+    const fallbackBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", quality);
+    });
+    if (!fallbackBlob) throw new Error("Could not process image.");
+    const basename = file.name.replace(/\.[^.]+$/, "") || "upload";
+    return new File([fallbackBlob], `${basename}.jpg`, { type: "image/jpeg" });
+  }
 
+  const mimeType = blob.type as "image/jpeg" | "image/webp" | "image/png";
   const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
   const basename = file.name.replace(/\.[^.]+$/, "") || "upload";
   return new File([blob], `${basename}.${extension}`, { type: mimeType });

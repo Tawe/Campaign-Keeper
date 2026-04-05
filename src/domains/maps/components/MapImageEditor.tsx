@@ -52,8 +52,8 @@ export function MapImageEditor({ mapId, campaignId, imageUrl }: MapImageEditorPr
       try {
         const processedFile = await fileToProcessedFile(file, {
           maxDimension: 2800,
-          mimeType: "image/webp",
-          quality: 0.92,
+          mimeType: "image/jpeg",
+          quality: 0.94,
         });
         const formData = new FormData();
         formData.set("file", processedFile);
