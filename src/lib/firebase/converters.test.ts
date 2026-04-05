@@ -9,6 +9,9 @@ import {
   toCampaignFaction,
   toLocation,
   toCampaignLocation,
+  toWorldMap,
+  toCampaignMap,
+  toMapPin,
   toCalendar,
 } from "./converters";
 
@@ -293,6 +296,66 @@ describe("toPlayer", () => {
       updatedAt: null,
     });
     expect(toPlayer(doc).characters).toEqual([]);
+  });
+});
+
+describe("map converters", () => {
+  it("maps global map fields", () => {
+    const doc = mockDoc("m1", {
+      userId: "u1",
+      name: "Overworld",
+      imagePath: "maps/overworld.jpg",
+      locationId: "loc1",
+      width: 1600,
+      height: 900,
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    const result = toWorldMap(doc);
+    expect(result.id).toBe("m1");
+    expect(result.user_id).toBe("u1");
+    expect(result.image_url).toContain("/api/portraits/map/m1");
+    expect(result.location_id).toBe("loc1");
+    expect(result.width).toBe(1600);
+    expect(result.height).toBe(900);
+  });
+
+  it("maps campaign map fields", () => {
+    const doc = mockDoc("c1_m1", {
+      campaignId: "c1",
+      mapId: "m1",
+      userId: "u1",
+      name: "Overworld",
+      playerVisible: true,
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    const result = toCampaignMap(doc);
+    expect(result.id).toBe("m1");
+    expect(result.campaign_id).toBe("c1");
+    expect(result.player_visible).toBe(true);
+  });
+
+  it("maps map pin fields", () => {
+    const doc = mockDoc("pin1", {
+      mapId: "m1",
+      label: "Town",
+      x: 0.45,
+      y: 0.62,
+      targetType: "location",
+      targetId: "loc1",
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    const result = toMapPin(doc, { visibility: "public" });
+    expect(result.id).toBe("pin1");
+    expect(result.map_id).toBe("m1");
+    expect(result.target_type).toBe("location");
+    expect(result.target_id).toBe("loc1");
+    expect(result.visibility).toBe("public");
   });
 });
 

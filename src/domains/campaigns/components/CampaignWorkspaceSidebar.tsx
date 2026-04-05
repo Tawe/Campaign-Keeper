@@ -19,6 +19,7 @@ const navItems = [
   { label: "NPCs", href: (id: string) => `/campaigns/${id}/npcs` },
   { label: "Players", href: (id: string) => `/campaigns/${id}/players` },
   { label: "Locations", href: (id: string) => `/campaigns/${id}/locations` },
+  { label: "Maps", href: (id: string) => `/campaigns/${id}/maps` },
   { label: "Factions", href: (id: string) => `/campaigns/${id}/factions` },
   { label: "Events", href: (id: string) => `/campaigns/${id}/events` },
   { label: "Search", href: (id: string) => `/campaigns/${id}/search` },

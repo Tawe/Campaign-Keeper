@@ -14,6 +14,10 @@ export const PLAYERS_COL = "players";
 export const LOCATIONS_COL = "locations";
 export const CAMPAIGN_LOCATIONS_COL = "campaign_locations";
 export const LOCATION_VISITS_COL = "location_visits";
+export const MAPS_COL = "maps";
+export const CAMPAIGN_MAPS_COL = "campaign_maps";
+export const MAP_PINS_COL = "map_pins";
+export const CAMPAIGN_MAP_PINS_COL = "campaign_map_pins";
 export const FACTIONS_COL = "factions";
 export const CAMPAIGN_FACTIONS_COL = "campaign_factions";
 export const CALENDARS_COL = "calendars";
@@ -135,6 +139,54 @@ export interface CampaignLocationDoc {
   parentLocationId: string | null; // denormalized from locations doc
   publicInfo: string | null;
   privateNotes: string | null;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface MapDoc {
+  userId: string;
+  name: string;
+  nameLower: string;
+  imagePath: string | null;
+  locationId: string | null;
+  width: number | null;
+  height: number | null;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface CampaignMapDoc {
+  campaignId: string;
+  mapId: string;
+  userId: string;
+  name: string;
+  nameLower: string;
+  locationId: string | null;
+  playerVisible: boolean;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface MapPinDoc {
+  mapId: string;
+  userId: string;
+  label: string;
+  x: number;
+  y: number;
+  icon: string | null;
+  color: string | null;
+  targetType: "location" | "map";
+  targetId: string;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
+export interface CampaignMapPinDoc {
+  campaignId: string;
+  mapId: string;
+  pinId: string;
+  userId: string;
+  visibility: "public" | "private";
   createdAt: FirebaseFirestore.Timestamp;
   updatedAt: FirebaseFirestore.Timestamp;
 }

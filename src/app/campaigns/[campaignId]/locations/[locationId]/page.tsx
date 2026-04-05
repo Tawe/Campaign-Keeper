@@ -25,6 +25,8 @@ import { SectionFrame, StackedList } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Portrait } from "@/components/shared/Portrait";
 import { formatDateShort } from "@/lib/utils";
+import { AddMapForm } from "@/domains/maps/components/AddMapForm";
+import { getAvailableMaps, getMapsForLocation } from "@/domains/maps/queries";
 
 export default async function LocationDetailPage({
   params,
@@ -44,12 +46,14 @@ export default async function LocationDetailPage({
 
   const { location, sessionMap } = data;
 
-  const [breadcrumb, sublocations, npcsHere, allCampaignLocations, events] = await Promise.all([
+  const [breadcrumb, sublocations, npcsHere, allCampaignLocations, events, maps, availableMaps] = await Promise.all([
     getLocationPath(locationId),
     getSublocations(locationId, campaignId),
     getNpcsAtLocation(campaignId, location.name),
     getCampaignLocations(campaignId),
     getEventsForLocation(campaignId, locationId),
+    getMapsForLocation(campaignId, locationId),
+    getAvailableMaps(user.uid, campaignId),
   ]);
 
   // Selector should exclude self and its descendants (simple: exclude self)
@@ -238,6 +242,36 @@ export default async function LocationDetailPage({
             ))}
           </div>
         )}
+      </SectionFrame>
+
+      <SectionFrame
+        title="Maps"
+        eyebrow="Atlas"
+        description="Reusable vault maps linked to this location. Hover pins to preview linked locations; click pins to open them."
+      >
+        <div className="space-y-4">
+          <AddMapForm
+            campaignId={campaignId}
+            availableMaps={availableMaps}
+            availableLocations={allCampaignLocations.map((entry) => ({ id: entry.id, name: entry.name }))}
+            defaultLocationId={locationId}
+          />
+          {maps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No maps linked yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {maps.map((map) => (
+                <Link
+                  key={map.id}
+                  href={`/campaigns/${campaignId}/maps/${map.id}`}
+                  className="rounded-xl border border-border/80 px-3 py-2 text-sm font-medium hover:bg-muted"
+                >
+                  {map.name}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </SectionFrame>
 
       {/* Session history */}

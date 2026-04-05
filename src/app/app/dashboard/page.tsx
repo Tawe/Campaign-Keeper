@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, Settings, Users, MapPin, Shield, Scroll } from "lucide-react";
+import { Plus, Settings, Users, MapPin, Shield, Scroll, Map as MapIcon } from "lucide-react";
 import { getSessionUser } from "@/lib/firebase/session";
 import { getUserCampaigns, getLatestSessionDates, getNextScheduledDates, getPlayerCounts } from "@/domains/campaigns/queries";
 import { getPlayerMemberships } from "@/domains/players/queries";
@@ -25,6 +25,12 @@ const vaultLinks = [
     label: "Locations",
     description: "Every place your parties have visited",
     Icon: MapPin,
+  },
+  {
+    href: "/app/maps",
+    label: "Maps",
+    description: "Reusable interactive maps across campaigns",
+    Icon: MapIcon,
   },
   {
     href: "/app/factions",
@@ -143,7 +149,7 @@ export default async function DashboardPage() {
 
       <section className="space-y-4">
         <h2 className="font-serif text-2xl tracking-[-0.02em] text-foreground">Vault</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {vaultLinks.map(({ href, label, description, Icon }) => (
             <Link key={href} href={href}>
               <Card className="cursor-pointer p-5 h-full">

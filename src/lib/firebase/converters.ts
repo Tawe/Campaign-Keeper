@@ -3,7 +3,25 @@
  * Handles Timestamp → ISO string conversion.
  */
 import type { DocumentSnapshot } from "firebase-admin/firestore";
-import type { Attendance, Calendar, CampaignEvent, Campaign, ScheduledSession, Session, Thread, Npc, NpcClass, NpcMention, Player, Location, Faction, GalleryImage } from "@/types";
+import type {
+  Attendance,
+  Calendar,
+  CampaignEvent,
+  Campaign,
+  ScheduledSession,
+  Session,
+  Thread,
+  Npc,
+  NpcClass,
+  NpcMention,
+  Player,
+  Location,
+  Faction,
+  GalleryImage,
+  WorldMap,
+  CampaignMap,
+  MapPin,
+} from "@/types";
 
 function ts(val: unknown): string {
   if (!val) return new Date().toISOString();
@@ -105,7 +123,7 @@ function parseNpcClasses(npcClass: unknown, level: unknown): NpcClass[] {
   return [];
 }
 
-function buildImageUrl(kind: "npc" | "location" | "campaign" | "faction" | "event" | "player", id: string, version: string, options?: { galleryIndex?: number }) {
+function buildImageUrl(kind: "npc" | "location" | "campaign" | "faction" | "event" | "player" | "map", id: string, version: string, options?: { galleryIndex?: number }) {
   const params = new URLSearchParams({ v: version });
   if (typeof options?.galleryIndex === "number") {
     params.set("gallery", "1");
@@ -223,6 +241,93 @@ export function toCampaignLocation(doc: DocumentSnapshot): Location {
     private_notes: d.privateNotes ?? null,
     created_at: ts(d.createdAt),
     updated_at: ts(d.updatedAt),
+  };
+}
+
+export function toWorldMap(doc: DocumentSnapshot): WorldMap {
+  const d = doc.data()!;
+  const imageVersion = encodeURIComponent(ts(d.updatedAt));
+  return {
+    id: doc.id,
+    name: d.name,
+    user_id: d.userId,
+    image_url: d.imagePath ? buildImageUrl("map", doc.id, imageVersion) : null,
+    location_id: d.locationId ?? null,
+    width: typeof d.width === "number" ? d.width : null,
+    height: typeof d.height === "number" ? d.height : null,
+    created_at: ts(d.createdAt),
+    updated_at: ts(d.updatedAt),
+  };
+}
+
+export function toCampaignMap(doc: DocumentSnapshot): CampaignMap {
+  const d = doc.data()!;
+  return {
+    id: d.mapId,
+    campaign_id: d.campaignId,
+    name: d.name,
+    user_id: d.userId,
+    image_url: null,
+    location_id: d.locationId ?? null,
+    width: null,
+    height: null,
+    player_visible: Boolean(d.playerVisible),
+    created_at: ts(d.createdAt),
+    updated_at: ts(d.updatedAt),
+  };
+}
+
+export function toMapPin(
+  doc: DocumentSnapshot,
+  options?: {
+    visibility?: "public" | "private";
+    preview?: MapPin["preview"];
+  },
+): MapPin {
+  const d = doc.data()!;
+  return {
+    id: doc.id,
+    map_id: d.mapId,
+    label: d.label,
+    x: typeof d.x === "number" ? d.x : 0,
+    y: typeof d.y === "number" ? d.y : 0,
+    icon: d.icon ?? null,
+    color: d.color ?? null,
+    target_type: d.targetType,
+    target_id: d.targetId,
+    visibility: options?.visibility ?? "private",
+    preview: options?.preview ?? null,
+    created_at: ts(d.createdAt),
+    updated_at: ts(d.updatedAt),
+  };
+}
+
+export function buildMapPinPreview(options: {
+  targetType: "location" | "map";
+  targetId: string;
+  campaignId: string;
+  visibility: "public" | "private";
+  title: string;
+  summary?: string | null;
+  imageUrl?: string | null;
+  terrain?: string[];
+  privateNotes?: string | null;
+}) {
+  const href = options.targetType === "location"
+    ? options.visibility === "public"
+      ? `/player/campaigns/${options.campaignId}/locations/${options.targetId}`
+      : `/campaigns/${options.campaignId}/locations/${options.targetId}`
+    : options.visibility === "public"
+      ? `/player/campaigns/${options.campaignId}/maps/${options.targetId}`
+      : `/campaigns/${options.campaignId}/maps/${options.targetId}`;
+
+  return {
+    title: options.title,
+    summary: options.summary ?? null,
+    image_url: options.imageUrl ?? null,
+    terrain: options.terrain ?? [],
+    private_notes: options.visibility === "private" ? options.privateNotes ?? null : null,
+    href,
   };
 }
 

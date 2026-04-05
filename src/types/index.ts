@@ -2,6 +2,7 @@ export type Visibility = "public" | "private";
 export type ThreadStatus = "open" | "resolved";
 export type NpcDisposition = "ally" | "enemy" | "neutral" | "unknown";
 export type CombatDifficulty = "low" | "moderate" | "hard";
+export type MapPinTargetType = "location" | "map";
 
 export interface GalleryImage {
   url: string;
@@ -114,6 +115,48 @@ export interface Location {
   terrain: string[];           // type tags e.g. ["Village", "Glacier"]
   public_info: string | null;
   private_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorldMap {
+  id: string;
+  name: string;
+  user_id: string;
+  image_url: string | null;
+  location_id: string | null;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignMap extends WorldMap {
+  campaign_id: string;
+  player_visible: boolean;
+}
+
+export interface MapPinPreview {
+  title: string;
+  summary: string | null;
+  image_url: string | null;
+  terrain: string[];
+  private_notes: string | null;
+  href: string | null;
+}
+
+export interface MapPin {
+  id: string;
+  map_id: string;
+  label: string;
+  x: number;
+  y: number;
+  icon: string | null;
+  color: string | null;
+  target_type: MapPinTargetType;
+  target_id: string;
+  visibility: Visibility;
+  preview: MapPinPreview | null;
   created_at: string;
   updated_at: string;
 }

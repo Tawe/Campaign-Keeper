@@ -7,6 +7,7 @@ import {
   EVENTS_COL,
   FACTIONS_COL,
   LOCATIONS_COL,
+  MAPS_COL,
   NPCS_COL,
   PLAYERS_COL,
   SESSIONS_COL,
@@ -21,6 +22,7 @@ const OWNED_COLLECTIONS = {
   player: PLAYERS_COL,
   npc: NPCS_COL,
   location: LOCATIONS_COL,
+  map: MAPS_COL,
   faction: FACTIONS_COL,
   event: EVENTS_COL,
 } as const;

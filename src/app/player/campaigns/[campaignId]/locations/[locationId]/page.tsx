@@ -15,6 +15,7 @@ import { SectionFrame, StackedList } from "@/components/shared/editorial";
 import { Badge } from "@/components/ui/badge";
 import { Portrait } from "@/components/shared/Portrait";
 import { formatDateShort } from "@/lib/utils";
+import { getMapsForLocation } from "@/domains/maps/queries";
 
 export default async function PlayerLocationDetailPage({
   params,
@@ -30,10 +31,11 @@ export default async function PlayerLocationDetailPage({
 
   const { location, sessionMap } = data;
 
-  const [breadcrumb, sublocations, npcsHere] = await Promise.all([
+  const [breadcrumb, sublocations, npcsHere, maps] = await Promise.all([
     getLocationPath(locationId),
     getSublocations(locationId, campaignId),
     getNpcsAtLocation(campaignId, location.name),
+    getMapsForLocation(campaignId, locationId, { playerVisibleOnly: true }),
   ]);
 
   const sessionList = Array.from(sessionMap.values()).sort((a, b) => b.date.localeCompare(a.date));
@@ -114,6 +116,23 @@ export default async function PlayerLocationDetailPage({
               >
                 <Portrait src={npc.portrait_url} alt={npc.name} className="h-8 w-8 shrink-0" />
                 <span className="text-sm font-medium">{npc.name}</span>
+              </Link>
+            ))}
+          </StackedList>
+        </SectionFrame>
+      )}
+
+      {maps.length > 0 && (
+        <SectionFrame title="Maps" eyebrow="Atlas">
+          <StackedList>
+            {maps.map((map) => (
+              <Link
+                key={map.id}
+                href={`/player/campaigns/${campaignId}/maps/${map.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors"
+              >
+                <span className="text-sm font-medium">{map.name}</span>
+                <span className="text-xs text-muted-foreground">Open map</span>
               </Link>
             ))}
           </StackedList>
